@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -94,6 +95,12 @@ abstract final class AppTheme {
         ),
         hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.carbon),
         labelStyle: textTheme.labelMedium,
+        // Texte d'aide (ex. « 8 caractères minimum ») et messages d'erreur
+        // sous les champs. Deux lignes maximum pour ne rien couper.
+        helperStyle: textTheme.bodySmall?.copyWith(color: AppColors.carbon),
+        helperMaxLines: 2,
+        errorStyle: textTheme.bodySmall?.copyWith(color: AppColors.error),
+        errorMaxLines: 2,
         border: _inputBorder(AppColors.border, 1),
         enabledBorder: _inputBorder(AppColors.border, 1),
         focusedBorder: _inputBorder(AppColors.emerald, 1.5),
@@ -121,6 +128,53 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.card),
           side: const BorderSide(color: AppColors.border),
         ),
+      ),
+
+      // Barre du haut des écrans clairs (Inscription, puis les suivants) :
+      // fond crème, texte bleu nuit, titre en Merriweather 18 (headline-sm).
+      // Pas d'ombre, mais un trait fin en bas (DESIGN.md, niveau 2).
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.cream,
+        foregroundColor: AppColors.navy,
+        elevation: 0,
+        // Pas de changement de teinte quand le contenu défile dessous.
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        centerTitle: false,
+        titleTextStyle: textTheme.titleLarge,
+        shape: const Border(bottom: BorderSide(color: AppColors.border)),
+        // Fond clair : icônes sombres dans la barre d'état. On remet aussi
+        // la barre de navigation Android en crème (Bienvenue l'a mise en nuit).
+        systemOverlayStyle: SystemUiOverlayStyle.dark.copyWith(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: AppColors.cream,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+      ),
+
+      // Cases à cocher (DESIGN.md) : bord gris carbone de 1,5 px, coins de
+      // 6 px, vert une fois cochée, rouge en cas d'erreur.
+      checkboxTheme: CheckboxThemeData(
+        // Zone tactile de 48 px partout, y compris sur le web et l'ordinateur.
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.checkbox),
+        ),
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.emerald
+              : Colors.transparent,
+        ),
+        checkColor: const WidgetStatePropertyAll(AppColors.white),
+        side: WidgetStateBorderSide.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const BorderSide(color: AppColors.emerald, width: 1.5);
+          }
+          if (states.contains(WidgetState.error)) {
+            return const BorderSide(color: AppColors.error, width: 1.5);
+          }
+          return const BorderSide(color: AppColors.carbon, width: 1.5);
+        }),
       ),
 
       dividerTheme: const DividerThemeData(

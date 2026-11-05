@@ -14,6 +14,11 @@ abstract final class AppSpacing {
 
   /// Hauteur des boutons principaux et des champs de saisie.
   static const double controlHeight = 52;
+
+  /// Largeur maximale du contenu. Sur un grand écran (Chrome, tablette),
+  /// le contenu reste lisible au centre au lieu de s'étirer sur toute la
+  /// largeur. Partagée par Bienvenue, Inscription et les écrans suivants.
+  static const double maxContentWidth = 480;
 }
 
 /// Rayons d'arrondi des coins.
@@ -35,4 +40,7 @@ abstract final class AppRadius {
 
   /// Illustration en haut d'écran : rounded-xl de la maquette = 12.
   static const double media = 12;
+
+  /// Cases à cocher (DESIGN.md : 6 px).
+  static const double checkbox = 6;
 }

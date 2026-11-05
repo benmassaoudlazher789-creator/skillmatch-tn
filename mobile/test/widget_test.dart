@@ -34,12 +34,31 @@ void main() {
     }
   });
 
-  testWidgets('Créer un compte affiche un message temporaire', (tester) async {
+  testWidgets("Créer un compte ouvre l'Inscription, Retour ramène ici",
+      (tester) async {
     await pumpWelcome(tester);
 
     // Le bouton peut être sous le bas de l'écran : on fait défiler d'abord.
     await tester.ensureVisible(find.text('Créer un compte'));
     await tester.tap(find.text('Créer un compte'));
+    // pumpAndSettle attend la fin de l'animation de transition.
+    await tester.pumpAndSettle();
+
+    expect(find.text('Créez votre compte'), findsOneWidget);
+    expect(find.text('Prouve ce que tu sais faire.'), findsNothing);
+
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prouve ce que tu sais faire.'), findsOneWidget);
+    expect(find.text('Créez votre compte'), findsNothing);
+  });
+
+  testWidgets('Se connecter affiche un message temporaire', (tester) async {
+    await pumpWelcome(tester);
+
+    await tester.ensureVisible(find.text('Se connecter'));
+    await tester.tap(find.text('Se connecter'));
     await tester.pump();
     expect(find.textContaining('à venir'), findsOneWidget);
   });

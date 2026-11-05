@@ -5,8 +5,9 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'register_screen.dart';
 import 'widgets/feature_tile.dart';
-import 'widgets/welcome_hero.dart';
+import 'widgets/welcome_illustration.dart';
 
 /// Écran 1 : Bienvenue.
 ///
@@ -16,16 +17,20 @@ import 'widgets/welcome_hero.dart';
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key, this.onCreateAccount, this.onSignIn});
 
-  /// Actions des deux boutons. Les écrans Inscription et Connexion
-  /// n'existent pas encore : si rien n'est fourni, on affiche un message
-  /// temporaire. Plus tard, main.dart passera ici la navigation réelle.
+  /// Actions des deux boutons. On peut les remplacer (utile pour les tests
+  /// ou une future navigation centrale). Sans valeur fournie :
+  /// - « Créer un compte » ouvre l'écran Inscription ;
+  /// - « Se connecter » affiche un message temporaire (écran Connexion à venir).
   final VoidCallback? onCreateAccount;
   final VoidCallback? onSignIn;
 
-  /// Largeur maximale du contenu. Sur un grand écran (Chrome, tablette),
-  /// le texte reste lisible au centre, mais le fond bleu nuit, lui,
-  /// couvre toute la fenêtre : pas de bandes sur les côtés.
-  static const double _maxContentWidth = 480;
+  /// Ouvre l'écran Inscription par-dessus Bienvenue. Navigator.push garde
+  /// Bienvenue en dessous : le bouton retour y ramène tout seul.
+  void _openRegister(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
+    );
+  }
 
   void _comingSoon(BuildContext context, String screen) {
     ScaffoldMessenger.of(context)
@@ -83,7 +88,9 @@ class WelcomeScreen extends StatelessWidget {
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight,
-                        maxWidth: _maxContentWidth,
+                        // Contenu centré, limité à 480 px (voir AppSpacing).
+                        // Le fond bleu nuit, lui, couvre toute la fenêtre.
+                        maxWidth: AppSpacing.maxContentWidth,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -117,7 +124,13 @@ class WelcomeScreen extends StatelessWidget {
       children: [
         const _Header(),
         const SizedBox(height: 24), // mb-6
-        const WelcomeHero(),
+        // Illustration géométrique à la place de la photo (welcome_hero.png).
+        // La photo reste dans assets/images/, mais on ne l'affiche pas pour
+        // l'instant. Une photo de meilleure qualité, avec des droits d'usage
+        // clairs (licence connue, autorisation des personnes visibles),
+        // pourra la remplacer plus tard : il suffira de réutiliser le widget
+        // WelcomeHero (widgets/welcome_hero.dart) avec la nouvelle image.
+        const WelcomeIllustration(),
         const SizedBox(height: 24), // mb-6
         Text(
           'Prouve ce que tu sais faire.',
@@ -189,8 +202,7 @@ class WelcomeScreen extends StatelessWidget {
             ],
           ),
           child: FilledButton(
-            onPressed:
-                onCreateAccount ?? () => _comingSoon(context, 'Créer un compte'),
+            onPressed: onCreateAccount ?? () => _openRegister(context),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
