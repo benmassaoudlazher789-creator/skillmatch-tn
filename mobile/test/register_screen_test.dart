@@ -25,7 +25,9 @@ void main() {
     await tester.enterText(find.byKey(RegisterScreen.nameFieldKey), name);
     await tester.enterText(find.byKey(RegisterScreen.emailFieldKey), email);
     await tester.enterText(
-        find.byKey(RegisterScreen.passwordFieldKey), password);
+      find.byKey(RegisterScreen.passwordFieldKey),
+      password,
+    );
   }
 
   Future<void> tapVisible(WidgetTester tester, Finder finder) async {
@@ -45,16 +47,20 @@ void main() {
   const passwordShortError =
       'Le mot de passe doit contenir au moins 8 caractères.';
   const termsError = 'Vous devez accepter les conditions pour créer un compte.';
-  const successMessage = "Inscription bientôt disponible : rien n'a été envoyé.";
+  const successMessage =
+      "Inscription bientôt disponible : rien n'a été envoyé.";
 
-  testWidgets('Inscription affiche le titre, les champs et les actions',
-      (tester) async {
+  testWidgets('Inscription affiche le titre, les champs et les actions', (
+    tester,
+  ) async {
     await pumpRegister(tester);
 
     expect(find.text('Inscription'), findsOneWidget);
     expect(find.text('Créez votre compte'), findsOneWidget);
-    expect(find.text('Quelques informations suffisent pour commencer.'),
-        findsOneWidget);
+    expect(
+      find.text('Quelques informations suffisent pour commencer.'),
+      findsOneWidget,
+    );
     expect(find.text('Nom complet'), findsOneWidget);
     expect(find.text('Adresse e-mail'), findsOneWidget);
     expect(find.text('Mot de passe'), findsOneWidget);
@@ -90,20 +96,23 @@ void main() {
     expect(find.textContaining('insat'), findsNothing);
   });
 
-  testWidgets('Formulaire vide : une erreur sous chaque champ et sous la case',
-      (tester) async {
-    await pumpRegister(tester);
-    await submit(tester);
+  testWidgets(
+    'Formulaire vide : une erreur sous chaque champ et sous la case',
+    (tester) async {
+      await pumpRegister(tester);
+      await submit(tester);
 
-    expect(find.text(nameError), findsOneWidget);
-    expect(find.text(emailEmptyError), findsOneWidget);
-    expect(find.text(passwordEmptyError), findsOneWidget);
-    expect(find.text(termsError), findsOneWidget);
-    expect(find.text(successMessage), findsNothing);
-  });
+      expect(find.text(nameError), findsOneWidget);
+      expect(find.text(emailEmptyError), findsOneWidget);
+      expect(find.text(passwordEmptyError), findsOneWidget);
+      expect(find.text(termsError), findsOneWidget);
+      expect(find.text(successMessage), findsNothing);
+    },
+  );
 
-  testWidgets('E-mail mal formé et mot de passe trop court sont refusés',
-      (tester) async {
+  testWidgets('E-mail mal formé et mot de passe trop court sont refusés', (
+    tester,
+  ) async {
     await pumpRegister(tester);
     await fillFields(tester, email: 'candidat@exemple', password: 'abcdefg');
     await submit(tester);
@@ -114,8 +123,9 @@ void main() {
     expect(find.text(successMessage), findsNothing);
   });
 
-  testWidgets('Case non cochée bloque, puis formulaire valide : message',
-      (tester) async {
+  testWidgets('Case non cochée bloque, puis formulaire valide : message', (
+    tester,
+  ) async {
     await pumpRegister(tester);
     await fillFields(tester);
 
@@ -131,15 +141,18 @@ void main() {
     expect(find.text(successMessage), findsOneWidget);
   });
 
-  testWidgets('Le bouton œil affiche puis masque le mot de passe',
-      (tester) async {
+  testWidgets('Le bouton œil affiche puis masque le mot de passe', (
+    tester,
+  ) async {
     await pumpRegister(tester);
 
     bool isObscured() => tester
-        .widget<TextField>(find.descendant(
-          of: find.byKey(RegisterScreen.passwordFieldKey),
-          matching: find.byType(TextField),
-        ))
+        .widget<TextField>(
+          find.descendant(
+            of: find.byKey(RegisterScreen.passwordFieldKey),
+            matching: find.byType(TextField),
+          ),
+        )
         .obscureText;
 
     expect(isObscured(), isTrue);
@@ -149,10 +162,17 @@ void main() {
     expect(isObscured(), isTrue);
   });
 
-  testWidgets('Se connecter affiche un message temporaire', (tester) async {
+  testWidgets("Se connecter remplace l'Inscription par la Connexion", (
+    tester,
+  ) async {
     await pumpRegister(tester);
-    await tapVisible(tester, find.text('Se connecter'));
-    expect(find.text('Écran « Connexion » à venir.'), findsOneWidget);
+    await tester.ensureVisible(find.text('Se connecter'));
+    await tester.tap(find.text('Se connecter'));
+    // pumpAndSettle attend la fin de l'animation de transition.
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bon retour'), findsOneWidget);
+    expect(find.text('Créez votre compte'), findsNothing);
   });
 
   // Tests unitaires des règles, sans écran : rapides et précis.

@@ -15,11 +15,11 @@ enum SkillChipKind { acquired, missing, neutral }
 ///   SkillChip.missing('Docker')
 class SkillChip extends StatelessWidget {
   const SkillChip.acquired(this.label, {super.key})
-      : kind = SkillChipKind.acquired;
+    : kind = SkillChipKind.acquired;
   const SkillChip.missing(this.label, {super.key})
-      : kind = SkillChipKind.missing;
+    : kind = SkillChipKind.missing;
   const SkillChip.neutral(this.label, {super.key})
-      : kind = SkillChipKind.neutral;
+    : kind = SkillChipKind.neutral;
 
   final String label;
   final SkillChipKind kind;
@@ -28,23 +28,23 @@ class SkillChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bg, fg, border, icon) = switch (kind) {
       SkillChipKind.acquired => (
-          AppColors.skillAcquiredBg,
-          AppColors.skillAcquiredText,
-          null,
-          Icons.check_rounded,
-        ),
+        AppColors.skillAcquiredBg,
+        AppColors.skillAcquiredText,
+        null,
+        Icons.check_rounded,
+      ),
       SkillChipKind.missing => (
-          AppColors.skillMissingBg,
-          AppColors.skillMissingText,
-          AppColors.skillMissingBorder,
-          Icons.add_rounded,
-        ),
+        AppColors.skillMissingBg,
+        AppColors.skillMissingText,
+        AppColors.skillMissingBorder,
+        Icons.add_rounded,
+      ),
       SkillChipKind.neutral => (
-          AppColors.white,
-          AppColors.carbon,
-          AppColors.border,
-          null,
-        ),
+        AppColors.white,
+        AppColors.carbon,
+        AppColors.border,
+        null,
+      ),
     };
 
     final radius = kind == SkillChipKind.neutral
@@ -77,9 +77,7 @@ class SkillChip extends StatelessWidget {
             ],
             Text(
               label,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
+              style: Theme.of(context).textTheme.labelMedium
                   ?.copyWith(color: fg),
             ),
           ],

@@ -30,23 +30,23 @@ abstract final class AppTypography {
   /// Flutter. Les écrans utilisent ensuite Theme.of(context).textTheme,
   /// ce qui garde le code des écrans indépendant des polices.
   static TextTheme textTheme() => TextTheme(
-        // headline-xl : grand titre d'écran
-        displaySmall: _serif(30, 38),
-        // headline-lg
-        headlineMedium: _serif(24, 32),
-        // headline-md
-        headlineSmall: _serif(20, 28),
-        // headline-sm : titre de poste dans une carte
-        titleLarge: _serif(18, 24),
-        // title-md
-        titleMedium: _sans(16, 22, FontWeight.w600),
-        // body-lg / body-md / body-sm
-        bodyLarge: _sans(16, 24, FontWeight.w400),
-        bodyMedium: _sans(14, 20, FontWeight.w400),
-        bodySmall: _sans(13, 18, FontWeight.w400),
-        // label-lg / label-md / label-sm
-        labelLarge: _sans(14, 18, FontWeight.w600),
-        labelMedium: _sans(12, 16, FontWeight.w600),
-        labelSmall: _sans(11, 14, FontWeight.w600),
-      );
+    // headline-xl : grand titre d'écran
+    displaySmall: _serif(30, 38),
+    // headline-lg
+    headlineMedium: _serif(24, 32),
+    // headline-md
+    headlineSmall: _serif(20, 28),
+    // headline-sm : titre de poste dans une carte
+    titleLarge: _serif(18, 24),
+    // title-md
+    titleMedium: _sans(16, 22, FontWeight.w600),
+    // body-lg / body-md / body-sm
+    bodyLarge: _sans(16, 24, FontWeight.w400),
+    bodyMedium: _sans(14, 20, FontWeight.w400),
+    bodySmall: _sans(13, 18, FontWeight.w400),
+    // label-lg / label-md / label-sm
+    labelLarge: _sans(14, 18, FontWeight.w600),
+    labelMedium: _sans(12, 16, FontWeight.w600),
+    labelSmall: _sans(11, 14, FontWeight.w600),
+  );
 }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'login_screen.dart';
 import 'register_screen.dart';
 import 'widgets/feature_tile.dart';
 import 'widgets/welcome_illustration.dart';
@@ -20,22 +21,21 @@ class WelcomeScreen extends StatelessWidget {
   /// Actions des deux boutons. On peut les remplacer (utile pour les tests
   /// ou une future navigation centrale). Sans valeur fournie :
   /// - « Créer un compte » ouvre l'écran Inscription ;
-  /// - « Se connecter » affiche un message temporaire (écran Connexion à venir).
+  /// - « Se connecter » ouvre l'écran Connexion.
   final VoidCallback? onCreateAccount;
   final VoidCallback? onSignIn;
 
   /// Ouvre l'écran Inscription par-dessus Bienvenue. Navigator.push garde
   /// Bienvenue en dessous : le bouton retour y ramène tout seul.
   void _openRegister(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const RegisterScreen()));
   }
 
-  void _comingSoon(BuildContext context, String screen) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('Écran « $screen » à venir.')));
+  /// Ouvre l'écran Connexion par-dessus Bienvenue (même principe).
+  void _openLogin(BuildContext context) {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
   }
 
   @override
@@ -100,10 +100,7 @@ class WelcomeScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildIntro(text),
-                            _buildActions(context),
-                          ],
+                          children: [_buildIntro(text), _buildActions(context)],
                         ),
                       ),
                     ),
@@ -161,15 +158,15 @@ class WelcomeScreen extends StatelessWidget {
           title: 'Comprenez votre score',
           // Règle du projet : le score est une aide, pas une garantie.
           // On le dit dès l'accueil.
-          description: "Chaque correspondance d'offre est expliquée, sans "
+          description:
+              "Chaque correspondance d'offre est expliquée, sans "
               'boîte noire. Le score est une aide pour vous orienter, pas '
               'une garantie.',
         ),
         const SizedBox(height: 14),
         const FeatureTile(
           title: 'Progressez vers le poste',
-          description:
-              "Un plan d'action personnalisé et réalisable pour chaque annonce.",
+          description: "Un plan d'action personnalisé et réalisable pour chaque annonce.",
         ),
       ],
     );
@@ -215,7 +212,7 @@ class WelcomeScreen extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         TextButton(
-          onPressed: onSignIn ?? () => _comingSoon(context, 'Connexion'),
+          onPressed: onSignIn ?? () => _openLogin(context),
           style: TextButton.styleFrom(
             minimumSize: const Size.fromHeight(AppSpacing.controlHeight),
             foregroundColor: AppColors.onNavy,
@@ -271,10 +268,10 @@ class _Header extends StatelessWidget {
             Text(
               'SKILLMATCH TN',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.onAmberSoft,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.55, // tracking-wider = 0,05 em
-                  ),
+                color: AppColors.onAmberSoft,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.55, // tracking-wider = 0,05 em
+              ),
             ),
           ],
         ),

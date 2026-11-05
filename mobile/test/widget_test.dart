@@ -34,8 +34,9 @@ void main() {
     }
   });
 
-  testWidgets("Créer un compte ouvre l'Inscription, Retour ramène ici",
-      (tester) async {
+  testWidgets("Créer un compte ouvre l'Inscription, Retour ramène ici", (
+    tester,
+  ) async {
     await pumpWelcome(tester);
 
     // Le bouton peut être sous le bas de l'écran : on fait défiler d'abord.
@@ -54,12 +55,63 @@ void main() {
     expect(find.text('Créez votre compte'), findsNothing);
   });
 
-  testWidgets('Se connecter affiche un message temporaire', (tester) async {
+  // Petit raccourci : fait défiler jusqu'au texte, le touche, puis attend
+  // la fin de l'animation de transition.
+  Future<void> tapAndSettle(WidgetTester tester, String label) async {
+    await tester.ensureVisible(find.text(label));
+    await tester.tap(find.text(label));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Se connecter ouvre la Connexion, Retour ramène ici', (
+    tester,
+  ) async {
     await pumpWelcome(tester);
 
-    await tester.ensureVisible(find.text('Se connecter'));
-    await tester.tap(find.text('Se connecter'));
-    await tester.pump();
-    expect(find.textContaining('à venir'), findsOneWidget);
+    await tapAndSettle(tester, 'Se connecter');
+    expect(find.text('Bon retour'), findsOneWidget);
+    expect(find.text('Prouve ce que tu sais faire.'), findsNothing);
+
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+    expect(find.text('Prouve ce que tu sais faire.'), findsOneWidget);
+  });
+
+  testWidgets('Connexion → Créer un compte → Retour ramène à Bienvenue', (
+    tester,
+  ) async {
+    await pumpWelcome(tester);
+
+    await tapAndSettle(tester, 'Se connecter');
+    // Lien « Créer un compte » de la Connexion (Bienvenue est cachée
+    // dessous, find.text ne voit que l'écran affiché).
+    await tapAndSettle(tester, 'Créer un compte');
+    expect(find.text('Créez votre compte'), findsOneWidget);
+    expect(find.text('Bon retour'), findsNothing);
+
+    // pushReplacement : la Connexion a été remplacée, Retour mène donc
+    // directement à Bienvenue.
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+    expect(find.text('Prouve ce que tu sais faire.'), findsOneWidget);
+    expect(find.text('Créez votre compte'), findsNothing);
+    expect(find.text('Bon retour'), findsNothing);
+  });
+
+  testWidgets('Inscription → Se connecter → Retour ramène à Bienvenue', (
+    tester,
+  ) async {
+    await pumpWelcome(tester);
+
+    await tapAndSettle(tester, 'Créer un compte');
+    // Lien « Se connecter » de l'Inscription.
+    await tapAndSettle(tester, 'Se connecter');
+    expect(find.text('Bon retour'), findsOneWidget);
+    expect(find.text('Créez votre compte'), findsNothing);
+
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+    expect(find.text('Prouve ce que tu sais faire.'), findsOneWidget);
+    expect(find.text('Bon retour'), findsNothing);
   });
 }

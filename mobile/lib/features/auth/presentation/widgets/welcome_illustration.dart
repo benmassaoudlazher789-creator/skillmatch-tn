@@ -95,8 +95,10 @@ class _WelcomePainter extends CustomPainter {
       height: sheetH,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(sheetRect.shift(const Offset(3, 4)),
-          const Radius.circular(8)),
+      RRect.fromRectAndRadius(
+        sheetRect.shift(const Offset(3, 4)),
+        const Radius.circular(8),
+      ),
       Paint()..color = Colors.black.withValues(alpha: 0.18),
     );
     canvas.drawRRect(
@@ -106,7 +108,10 @@ class _WelcomePainter extends CustomPainter {
     // En-tête du CV : un rond (photo) et deux lignes (nom, titre).
     final pad = sheetW * 0.14;
     final avatarR = sheetW * 0.11;
-    final avatarC = Offset(sheetRect.left + pad + avatarR, sheetRect.top + pad + avatarR);
+    final avatarC = Offset(
+      sheetRect.left + pad + avatarR,
+      sheetRect.top + pad + avatarR,
+    );
     canvas.drawCircle(avatarC, avatarR, Paint()..color = AppColors.navy);
     final linePaint = Paint()
       ..color = _sheetLine
@@ -129,7 +134,11 @@ class _WelcomePainter extends CustomPainter {
     for (var i = 0; y < sheetRect.bottom - pad * 0.6; i++) {
       final end = sheetRect.right - pad - (i.isOdd ? sheetW * 0.18 : 0);
       linePaint.color = highlights[i] ?? _sheetLine;
-      canvas.drawLine(Offset(sheetRect.left + pad, y), Offset(end, y), linePaint);
+      canvas.drawLine(
+        Offset(sheetRect.left + pad, y),
+        Offset(end, y),
+        linePaint,
+      );
       y += 9;
     }
     canvas.restore();
@@ -155,7 +164,11 @@ class _WelcomePainter extends CustomPainter {
       canvas.drawPath(path, linkPaint);
     }
     for (final (c, r, color) in skills) {
-      canvas.drawCircle(c, r + 5, Paint()..color = color.withValues(alpha: 0.18));
+      canvas.drawCircle(
+        c,
+        r + 5,
+        Paint()..color = color.withValues(alpha: 0.18),
+      );
       canvas.drawCircle(c, r, Paint()..color = color);
     }
 

@@ -13,8 +13,7 @@ abstract final class AuthValidators {
   /// sans espace, avec une extension d'au moins 2 lettres. Une règle
   /// parfaite est impossible ; la vraie vérification se fera plus tard
   /// côté serveur (par exemple en envoyant un e-mail de confirmation).
-  static final RegExp _emailPattern =
-      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
+  static final RegExp _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
 
   static String? fullName(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -46,6 +45,13 @@ abstract final class AuthValidators {
     }
     return null;
   }
+
+  /// Connexion : on vérifie seulement que le mot de passe n'est pas vide.
+  /// La règle des 8 caractères ne concerne que la création du compte.
+  static String? passwordRequired(String? value) =>
+      (value == null || value.isEmpty)
+      ? 'Veuillez saisir votre mot de passe.'
+      : null;
 
   static String? termsAccepted(bool? value) => value == true
       ? null

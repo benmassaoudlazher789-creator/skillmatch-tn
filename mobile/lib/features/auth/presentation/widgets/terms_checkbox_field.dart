@@ -15,7 +15,8 @@ class TermsCheckboxField extends StatelessWidget {
   /// Clé de la case (pratique pour les tests).
   static const checkboxKey = Key('register_terms');
 
-  static const label = "J'accepte les conditions d'utilisation et la "
+  static const label =
+      "J'accepte les conditions d'utilisation et la "
       'politique de confidentialité.';
 
   @override
@@ -52,8 +53,9 @@ class TermsCheckboxField extends StatelessWidget {
                     Expanded(
                       child: Text(
                         label,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.carbon),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.carbon,
+                        ),
                       ),
                     ),
                   ],
@@ -68,8 +70,9 @@ class TermsCheckboxField extends StatelessWidget {
                 ),
                 child: Text(
                   field.errorText!,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.error),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ),
           ],
