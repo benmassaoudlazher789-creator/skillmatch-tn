@@ -1,30 +1,46 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:skillmatch_tn/main.dart';
+import 'package:skillmatch_tn/features/auth/presentation/welcome_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  // On teste l'écran dans un MaterialApp simple, sans AppTheme : en test,
+  // il n'y a pas d'Internet et google_fonts ne pourrait pas télécharger
+  // les polices. L'écran fonctionne quand même, avec la police par défaut.
+  Future<void> pumpWelcome(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const MaterialApp(home: WelcomeScreen()));
+  }
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  testWidgets('Bienvenue affiche le titre et les deux boutons', (tester) async {
+    await pumpWelcome(tester);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    expect(find.text('Prouve ce que tu sais faire.'), findsOneWidget);
+    expect(find.text('Créer un compte'), findsOneWidget);
+    expect(find.text('Se connecter'), findsOneWidget);
+  });
+
+  testWidgets('Bienvenue respecte les règles de contenu', (tester) async {
+    await pumpWelcome(tester);
+
+    // Phrase sur l'hébergement retirée, sélecteur de langue masqué.
+    expect(find.textContaining('hébergées'), findsNothing);
+    expect(find.text('العربية'), findsNothing);
+    // Mots interdits par CLAUDE.md.
+    for (final word in ['vérifié', 'passeport', 'défi']) {
+      expect(find.textContaining(word), findsNothing);
+    }
+  });
+
+  testWidgets('Créer un compte affiche un message temporaire', (tester) async {
+    await pumpWelcome(tester);
+
+    // Le bouton peut être sous le bas de l'écran : on fait défiler d'abord.
+    await tester.ensureVisible(find.text('Créer un compte'));
+    await tester.tap(find.text('Créer un compte'));
     await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.textContaining('à venir'), findsOneWidget);
   });
 }
