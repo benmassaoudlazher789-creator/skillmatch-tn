@@ -12,6 +12,13 @@ import '../../../../core/theme/app_spacing.dart';
 /// toutes les largeurs d'écran. Il raconte l'idée de l'application :
 /// un CV (à gauche) → des compétences détectées (au centre) → un score
 /// de correspondance (à droite).
+///
+/// Pour l'instant, l'écran Bienvenue affiche la photo (WelcomeHero) et non
+/// cette illustration. On garde ce widget dans le projet pour deux raisons :
+/// - WelcomeHero l'affiche à la place de la photo si celle-ci ne se charge
+///   pas (errorBuilder) ;
+/// - on pourra le remettre en haut de l'écran Bienvenue (à la place de
+///   const WelcomeHero() dans welcome_screen.dart) si la photo est retirée.
 class WelcomeIllustration extends StatelessWidget {
   const WelcomeIllustration({super.key, this.height = 144}); // h-36
 

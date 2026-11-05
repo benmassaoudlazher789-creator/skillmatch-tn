@@ -53,11 +53,16 @@ abstract final class AppTheme {
           textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
           foregroundColor: const WidgetStatePropertyAll(AppColors.white),
           // Le vert s'assombrit quand on appuie (DESIGN.md).
-          backgroundColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.pressed)
+          // Désactivé (onPressed: null) : vert à 50 %, comme la maquette.
+          // Sans ce cas, un bouton inactif aurait l'air actif.
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return AppColors.emerald.withValues(alpha: 0.5);
+            }
+            return states.contains(WidgetState.pressed)
                 ? AppColors.emeraldPressed
-                : AppColors.emerald,
-          ),
+                : AppColors.emerald;
+          }),
         ),
       ),
 

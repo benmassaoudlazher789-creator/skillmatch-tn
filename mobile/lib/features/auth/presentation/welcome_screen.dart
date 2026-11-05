@@ -8,7 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'widgets/feature_tile.dart';
-import 'widgets/welcome_illustration.dart';
+import 'widgets/welcome_hero.dart';
 
 /// Écran 1 : Bienvenue.
 ///
@@ -121,13 +121,7 @@ class WelcomeScreen extends StatelessWidget {
       children: [
         const _Header(),
         const SizedBox(height: 24), // mb-6
-        // Illustration géométrique à la place de la photo (welcome_hero.png).
-        // La photo reste dans assets/images/, mais on ne l'affiche pas pour
-        // l'instant. Une photo de meilleure qualité, avec des droits d'usage
-        // clairs (licence connue, autorisation des personnes visibles),
-        // pourra la remplacer plus tard : il suffira de réutiliser le widget
-        // WelcomeHero (widgets/welcome_hero.dart) avec la nouvelle image.
-        const WelcomeIllustration(),
+        const WelcomeHero(),
         const SizedBox(height: 24), // mb-6
         Text(
           'Prouve ce que tu sais faire.',
