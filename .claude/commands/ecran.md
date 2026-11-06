@@ -1,5 +1,5 @@
 ---
-description: Construire un écran Flutter de SkillMatch TN à partir de la maquette Stitch (argument : numéro de l'écran)
+description: "Construire un écran Flutter de SkillMatch TN à partir de la maquette Stitch (argument = numéro de l'écran)"
 ---
 
 Prochain écran : écran numéro $ARGUMENTS.
