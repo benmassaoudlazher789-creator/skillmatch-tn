@@ -23,3 +23,16 @@ Couleurs : bleu nuit #10243A, crème #F7F5EF, vert #0F7F6B, ambre #E8A33D.
 - Le score est une aide, pas une garantie.
 - Ne jamais écrire de mot de passe ou de secret dans un fichier du projet.
 - Expliquer simplement chaque choix technique : c'est un projet étudiant.
+
+## Règles de travail
+- Un écran à la fois ; plan court validé avant d'écrire le code.
+- L'utilisateur lance lui-même dart format, flutter analyze et flutter test ;
+  aucun commit ni push.
+- Commentaires en français, qui expliquent pourquoi.
+- Réutiliser le thème et les widgets partagés ; aucune Row qui puisse
+  déborder (Expanded, Flexible ou Wrap).
+- Données fictives marquées « exemple » ; aucun appel réseau tant que l'API
+  n'existe pas.
+- Mots interdits : vérifiée, certifiée, prouvée, passeport, défi, chiffré,
+  robot.
+- Dépendances : file_picker 13.x s'utilise sans FilePicker.platform.
