@@ -8,6 +8,7 @@ import '../../../core/theme/widgets/skill_chip.dart';
 // servent.
 import '../../auth/presentation/widgets/auth_scaffold.dart';
 import '../../auth/presentation/widgets/labeled_text_field.dart';
+import '../../offers/presentation/offers_screen.dart';
 import '../data/sample_skills.dart';
 import '../domain/skill_rules.dart';
 
@@ -31,7 +32,6 @@ class SkillsReviewScreen extends StatefulWidget {
   static const exampleBanner =
       "Exemple de résultat : l'analyse réelle arrivera dans une prochaine "
       'version.';
-  static const offersSoonMessage = 'Offres bientôt disponibles.';
   static const atLeastOneHint =
       'Ajoutez au moins une compétence pour voir les offres.';
 
@@ -71,12 +71,16 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
   }
 
   void _showOffers() {
-    // Message temporaire : l'écran des offres (écran 6) viendra ensuite.
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text(SkillsReviewScreen.offersSoonMessage)),
-      );
+    // On passe une copie figée (List.unmodifiable) de la liste courante :
+    // l'écran Offres ne peut pas la modifier, et un changement fait ici
+    // après le retour ne touche pas une liste déjà affichée là-bas.
+    // push garde cet écran en dessous : « Retour » y revient avec la liste
+    // intacte.
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => OffersScreen(skills: List.unmodifiable(_skills)),
+      ),
+    );
   }
 
   @override

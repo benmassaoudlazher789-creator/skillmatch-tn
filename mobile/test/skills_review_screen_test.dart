@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:skillmatch_tn/core/theme/widgets/skill_chip.dart';
+import 'package:skillmatch_tn/features/offers/presentation/offers_screen.dart';
 import 'package:skillmatch_tn/features/skills/domain/skill_rules.dart';
 import 'package:skillmatch_tn/features/skills/presentation/skills_review_screen.dart';
 
@@ -164,23 +166,48 @@ void main() {
       find.byKey(SkillsReviewScreen.offersButtonKey),
       warnIfMissed: false,
     );
-    await tester.pump();
-    expect(find.text(SkillsReviewScreen.offersSoonMessage), findsNothing);
+    await tester.pumpAndSettle();
+    // L'écran Offres ne s'ouvre pas.
+    expect(find.text(OffersScreen.heading), findsNothing);
 
     // Une nouvelle compétence réactive le bouton.
     await addSkill(tester, 'Git');
     expect(offersEnabled(tester), isTrue);
   });
 
-  testWidgets('« Voir les offres » affiche le message temporaire', (
-    tester,
-  ) async {
-    await pumpScreen(tester);
+  testWidgets(
+    '« Voir les offres » ouvre l\'écran Offres avec les compétences courantes',
+    (tester) async {
+      // On part d'une liste sans Flutter, puis on l'ajoute à la main.
+      await pumpScreen(tester, initial: const ['Dart']);
+      await addSkill(tester, 'Flutter');
 
-    await tapVisible(tester, find.byKey(SkillsReviewScreen.offersButtonKey));
+      await tapVisible(tester, find.byKey(SkillsReviewScreen.offersButtonKey));
+      // pumpAndSettle attend la fin de l'animation de transition.
+      await tester.pumpAndSettle();
 
-    expect(find.text(SkillsReviewScreen.offersSoonMessage), findsOneWidget);
-  });
+      expect(find.text(OffersScreen.heading), findsOneWidget);
+      // Flutter, ajouté juste avant, apparaît en vert sur les offres
+      // d'exemple qui le demandent, et jamais en rouge.
+      bool isFlutter(Widget w, SkillChipKind kind) =>
+          w is SkillChip && w.label == 'Flutter' && w.kind == kind;
+      expect(
+        find.byWidgetPredicate((w) => isFlutter(w, SkillChipKind.acquired)),
+        findsWidgets,
+      );
+      expect(
+        find.byWidgetPredicate((w) => isFlutter(w, SkillChipKind.missing)),
+        findsNothing,
+      );
+
+      // « Retour » revient à Vos compétences, avec la liste intacte.
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
+      expect(find.text(OffersScreen.heading), findsNothing);
+      expect(find.byTooltip('Retirer Flutter'), findsOneWidget);
+      expect(find.byTooltip('Retirer Dart'), findsOneWidget);
+    },
+  );
 
   testWidgets('Petit écran et texte agrandi : rien ne déborde', (tester) async {
     // Un débordement (« RenderFlex overflowed ») ferait échouer ce test.
