@@ -6,6 +6,8 @@ import 'package:skillmatch_tn/features/offers/data/sample_offers.dart';
 import 'package:skillmatch_tn/features/offers/domain/offer.dart';
 import 'package:skillmatch_tn/features/offers/presentation/offers_screen.dart';
 import 'package:skillmatch_tn/features/offers/presentation/widgets/offer_card.dart';
+import 'package:skillmatch_tn/features/trainings/presentation/trainings_screen.dart';
+import 'package:skillmatch_tn/features/trainings/presentation/widgets/training_card.dart';
 
 void main() {
   // Compétences et offres fictives, propres aux tests : ils ne dépendent
@@ -188,17 +190,31 @@ void main() {
     );
   });
 
-  testWidgets('Toucher une compétence manquante affiche le message', (
+  testWidgets('Toucher une compétence manquante ouvre ses formations', (
     tester,
   ) async {
     await pumpScreen(tester);
+    // Un filtre choisi avant : il doit être conservé au retour.
+    await tapVisible(
+      tester,
+      find.byKey(OffersScreen.filterKey(OfferType.stage)),
+    );
 
     await tapVisible(tester, chip('stage', 'Docker', SkillChipKind.missing));
+    // pumpAndSettle attend la fin de l'animation de transition.
+    await tester.pumpAndSettle();
 
-    expect(
-      find.text(OffersScreen.trainingSoonMessage('Docker')),
-      findsOneWidget,
-    );
+    // Les formations d'exemple de Docker s'affichent.
+    expect(find.text(TrainingsScreen.heading('Docker')), findsOneWidget);
+    expect(find.byType(TrainingCard), findsWidgets);
+    expect(find.text(OffersScreen.heading), findsNothing);
+
+    // « Retour » revient aux offres, avec le même filtre.
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+    expect(find.text(OffersScreen.heading), findsOneWidget);
+    expect(card('stage'), findsOneWidget);
+    expect(card('web'), findsNothing);
   });
 
   testWidgets('Filtres : Tout, Emplois, Stages, PFE', (tester) async {

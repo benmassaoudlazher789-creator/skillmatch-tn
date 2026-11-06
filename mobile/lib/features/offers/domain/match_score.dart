@@ -68,17 +68,15 @@ abstract final class MatchScore {
   static const requiredWeight = 70;
   static const preferredWeight = 30;
 
-  /// Clé de comparaison : sans espaces en trop et sans majuscules, donc
-  /// « flutter » correspond à « Flutter ». Limites assumées (comme à
-  /// l'écran Vos compétences) : les accents comptent, et les synonymes ne
-  /// sont pas reconnus (« JS » n'est pas « JavaScript »).
-  static String _key(String skill) => SkillRules.clean(skill).toLowerCase();
-
   /// Compare [offer] aux compétences [skills] du candidat.
+  ///
+  /// Les compétences sont comparées avec SkillRules.key : sans espaces en
+  /// trop et sans majuscules, donc « flutter » correspond à « Flutter »
+  /// (limites : voir SkillRules.key).
   static MatchResult compute(Offer offer, List<String> skills) {
     // Un Set rend la recherche immédiate, même avec une longue liste.
-    final owned = {for (final s in skills) _key(s)};
-    bool has(String skill) => owned.contains(_key(skill));
+    final owned = {for (final s in skills) SkillRules.key(s)};
+    bool has(String skill) => owned.contains(SkillRules.key(skill));
 
     final requiredAcquired = offer.requiredSkills.where(has).toList();
     final requiredMissing = offer.requiredSkills.where((s) => !has(s)).toList();

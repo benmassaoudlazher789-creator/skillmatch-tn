@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/widgets/info_banner.dart';
 // Mise en page partagée avec Inscription, Connexion et Vos compétences.
 // Son nom ne convient plus (« auth ») : à renommer et déplacer dans core/
 // lors d'un prochain nettoyage.
 import '../../auth/presentation/widgets/auth_scaffold.dart';
+import '../../trainings/presentation/trainings_screen.dart';
 import '../data/sample_offers.dart';
 import '../domain/match_score.dart';
 import '../domain/offer.dart';
@@ -41,10 +43,6 @@ class OffersScreen extends StatefulWidget {
       "vous manquent : touchez-en une pour voir comment l'apprendre.";
   static const emptyFilter = "Aucune offre d'exemple de ce type.";
 
-  /// Message temporaire : l'écran Formations (écran 7) viendra ensuite.
-  static String trainingSoonMessage(String skill) =>
-      'Formations pour $skill : bientôt disponibles.';
-
   /// Clé d'un filtre, pour les tests (null = « Tout »).
   static Key filterKey(OfferType? type) =>
       Key('offers_filter_${type?.name ?? 'all'}');
@@ -67,12 +65,13 @@ class _OffersScreenState extends State<OffersScreen> {
   /// Filtre choisi ; null veut dire « Tout ».
   OfferType? _filter;
 
-  void _showTrainingSoon(String skill) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(OffersScreen.trainingSoonMessage(skill))),
-      );
+  /// Ouvre l'écran Formations pour la compétence manquante touchée.
+  /// push garde cet écran en dessous : « Retour » y revient avec le même
+  /// filtre (l'état de cet écran n'est pas détruit).
+  void _openTrainings(String skill) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => TrainingsScreen(skill: skill)),
+    );
   }
 
   @override
@@ -92,19 +91,9 @@ class _OffersScreenState extends State<OffersScreen> {
         children: [
           _buildFilters(text),
           const SizedBox(height: AppSpacing.md),
-          _Banner(
-            text: OffersScreen.exampleBanner,
-            background: AppColors.amberSoft,
-            foreground: AppColors.onAmberSoft,
-            border: AppColors.amber,
-          ),
+          const InfoBanner.example(OffersScreen.exampleBanner),
           const SizedBox(height: AppSpacing.sm),
-          const _Banner(
-            text: OffersScreen.scoreInfo,
-            background: AppColors.white,
-            foreground: AppColors.carbon,
-            border: AppColors.border,
-          ),
+          const InfoBanner.neutral(OffersScreen.scoreInfo),
           const SizedBox(height: AppSpacing.lg),
           if (visible.isEmpty)
             Text(
@@ -117,7 +106,7 @@ class _OffersScreenState extends State<OffersScreen> {
               OfferCard(
                 key: OffersScreen.cardKey(result.offer.id),
                 result: result,
-                onMissingTap: _showTrainingSoon,
+                onMissingTap: _openTrainings,
               ),
               const SizedBox(height: AppSpacing.gutter),
             ],
@@ -153,52 +142,6 @@ class _OffersScreenState extends State<OffersScreen> {
         filter(null, 'Tout'),
         for (final type in OfferType.values) filter(type, type.pluralLabel),
       ],
-    );
-  }
-}
-
-/// Bandeau d'information : icône « i » et texte.
-///
-/// Même forme que le bandeau d'exemple de l'écran Vos compétences. Il reste
-/// privé ici pour ne pas modifier l'écran 5 ; on pourra le partager dans
-/// core/ quand un troisième écran en aura besoin.
-class _Banner extends StatelessWidget {
-  const _Banner({
-    required this.text,
-    required this.background,
-    required this.foreground,
-    required this.border,
-  });
-
-  final String text;
-  final Color background;
-  final Color foreground;
-  final Color border;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.info_outline_rounded, size: 18, color: foreground),
-          const SizedBox(width: AppSpacing.sm),
-          // Expanded : le texte passe à la ligne au lieu de déborder.
-          Expanded(
-            child: Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: foreground),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

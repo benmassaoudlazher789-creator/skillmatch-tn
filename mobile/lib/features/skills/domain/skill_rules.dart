@@ -16,6 +16,17 @@ abstract final class SkillRules {
   /// (« Power   BI » devient « Power BI »).
   static String clean(String raw) => raw.trim().replaceAll(RegExp(r'\s+'), ' ');
 
+  /// Clé de comparaison entre deux compétences : la saisie nettoyée, en
+  /// minuscules. « flutter » et « Flutter » ont la même clé.
+  ///
+  /// Une seule fonction, partagée par la recherche de doublons (ici), le
+  /// score des offres et la recherche de formations : les trois comparent
+  /// donc les compétences exactement de la même façon.
+  /// Limites assumées : les accents comptent (« Ecoute » n'est pas
+  /// « Écoute »), et les synonymes ne sont pas reconnus (« JS » n'est pas
+  /// « JavaScript »).
+  static String key(String raw) => clean(raw).toLowerCase();
+
   /// Renvoie un message d'erreur, ou null si la compétence peut être
   /// ajoutée à [existing].
   ///
@@ -26,8 +37,8 @@ abstract final class SkillRules {
     final skill = clean(raw);
     if (skill.isEmpty) return emptyError;
     if (skill.length > maxLength) return tooLongError;
-    final key = skill.toLowerCase();
-    if (existing.any((s) => clean(s).toLowerCase() == key)) {
+    final newKey = key(skill);
+    if (existing.any((s) => key(s) == newKey)) {
       return duplicateError;
     }
     return null;
