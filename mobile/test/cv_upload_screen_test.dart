@@ -32,7 +32,8 @@ void main() {
   const imageFile = PickedCvFile(name: 'photo.png', sizeInBytes: 1000);
   const hugeFile = PickedCvFile(name: 'cv_lourd.pdf', sizeInBytes: 6 * mega);
 
-  const analyzeMessage = "Analyse bientôt disponible : rien n'a été envoyé.";
+  // Grand titre de l'écran Vos compétences : sert à savoir s'il est ouvert.
+  const skillsHeading = 'Vos compétences';
 
   late FakeCvPicker picker;
 
@@ -93,13 +94,13 @@ void main() {
       find.byKey(CvUploadScreen.analyzeButtonKey),
       warnIfMissed: false,
     );
-    await tester.pump();
-    expect(find.text(analyzeMessage), findsNothing);
+    await tester.pumpAndSettle();
+    // L'écran Vos compétences ne s'ouvre pas.
+    expect(find.text(skillsHeading), findsNothing);
+    expect(find.text('Ajoutez votre CV'), findsOneWidget);
   });
 
-  testWidgets('Fichier valide : nom, taille, bouton actif, message', (
-    tester,
-  ) async {
+  testWidgets('Fichier valide : nom, taille, bouton actif', (tester) async {
     await pumpScreen(tester);
     await choose(tester, validPdf);
 
@@ -107,9 +108,38 @@ void main() {
     expect(find.text('1,2 Mo'), findsOneWidget);
     expect(find.byIcon(Icons.error_outline_rounded), findsNothing);
     expect(analyzeEnabled(tester), isTrue);
+  });
+
+  testWidgets('Analyser mon CV ouvre Vos compétences, Retour ramène ici', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    await choose(tester, validPdf);
 
     await tapVisible(tester, find.byKey(CvUploadScreen.analyzeButtonKey));
-    expect(find.text(analyzeMessage), findsOneWidget);
+    // pumpAndSettle attend la fin de l'animation de transition.
+    await tester.pumpAndSettle();
+    expect(find.text(skillsHeading), findsOneWidget);
+    expect(find.text('Ajoutez votre CV'), findsNothing);
+
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+    expect(find.text(skillsHeading), findsNothing);
+    // Le fichier choisi est toujours là.
+    expect(find.text('cv_candidat.pdf'), findsOneWidget);
+  });
+
+  testWidgets('« Importer un autre CV » ramène à l\'écran CV', (tester) async {
+    await pumpScreen(tester);
+    await choose(tester, validPdf);
+    await tapVisible(tester, find.byKey(CvUploadScreen.analyzeButtonKey));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Importer un autre CV'));
+    await tester.tap(find.text('Importer un autre CV'));
+    await tester.pumpAndSettle();
+    expect(find.text(skillsHeading), findsNothing);
+    expect(find.text('Ajoutez votre CV'), findsOneWidget);
   });
 
   testWidgets('Mauvais type : message clair, bouton désactivé', (tester) async {

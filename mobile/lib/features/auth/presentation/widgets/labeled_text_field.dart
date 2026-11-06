@@ -27,6 +27,8 @@ class LabeledTextField extends StatelessWidget {
     this.enableSuggestions = true,
     this.validator,
     this.onFieldSubmitted,
+    this.controller,
+    this.maxLength,
   });
 
   /// Libellé toujours visible. Un texte d'exemple, lui, disparaît dès qu'on
@@ -54,6 +56,14 @@ class LabeledTextField extends StatelessWidget {
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onFieldSubmitted;
 
+  /// Optionnel : permet à l'écran de lire ou de vider le champ (par exemple
+  /// après l'ajout d'une compétence).
+  final TextEditingController? controller;
+
+  /// Optionnel : nombre maximal de caractères. Flutter bloque la saisie
+  /// au-delà et affiche un compteur (« 12/40 ») sous le champ.
+  final int? maxLength;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -64,6 +74,8 @@ class LabeledTextField extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         TextFormField(
           key: fieldKey,
+          controller: controller,
+          maxLength: maxLength,
           obscureText: obscureText,
           keyboardType: keyboardType,
           textInputAction: textInputAction,

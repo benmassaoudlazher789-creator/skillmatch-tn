@@ -5,6 +5,7 @@ import '../../../core/theme/app_spacing.dart';
 // Mise en page partagée avec Inscription et Connexion (barre du haut,
 // titre, sous-titre). Elle pourra être déplacée dans core/ plus tard.
 import '../../auth/presentation/widgets/auth_scaffold.dart';
+import '../../skills/presentation/skills_review_screen.dart';
 import '../data/cv_picker.dart';
 import '../domain/cv_file_rules.dart';
 import 'widgets/cv_file_tile.dart';
@@ -83,14 +84,12 @@ class _CvUploadScreenState extends State<CvUploadScreen> {
   }
 
   void _analyze() {
-    // Message honnête : l'analyse n'existe pas encore, rien ne part.
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text("Analyse bientôt disponible : rien n'a été envoyé."),
-        ),
-      );
+    // Ouvre l'écran Vos compétences. Rien n'est envoyé : cet écran montre
+    // une liste d'exemple, avec un bandeau qui le dit. push (et non
+    // pushReplacement) : Retour ramène ici, avec le fichier toujours choisi.
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const SkillsReviewScreen()));
   }
 
   @override
