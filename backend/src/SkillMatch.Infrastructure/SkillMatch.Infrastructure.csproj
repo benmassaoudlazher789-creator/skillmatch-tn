@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Tout ce qui parle au monde extérieur, ici PostgreSQL via Entity Framework Core.
+    Les versions des paquets sont dans backend/Directory.Packages.props.
+  -->
+  <PropertyGroup>
+    <RootNamespace>SkillMatch.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <!-- Fournisseur EF Core pour PostgreSQL. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- Pour lire la chaîne de connexion via IConfiguration sans dépendre d'ASP.NET Core. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SkillMatch.Core\SkillMatch.Core.csproj" />
+  </ItemGroup>
+</Project>

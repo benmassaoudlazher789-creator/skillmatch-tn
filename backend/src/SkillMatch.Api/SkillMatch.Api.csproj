@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    API HTTP consommée par l'application Flutter.
+    UserSecretsId n'est PAS un secret : c'est seulement le nom du dossier
+    %APPDATA%\Microsoft\UserSecrets\<id>\ (hors du dépôt) où dotnet user-secrets
+    range la chaîne de connexion sur votre machine.
+  -->
+  <PropertyGroup>
+    <RootNamespace>SkillMatch.Api</RootNamespace>
+    <UserSecretsId>3f6b2c1e-8d4a-4b7e-9c2f-5a1d7e0b9c43</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Nécessaire uniquement pour les commandes dotnet ef (migrations).
+      PrivateAssets=all : le paquet n'est pas embarqué à l'exécution.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SkillMatch.Core\SkillMatch.Core.csproj" />
+    <ProjectReference Include="..\SkillMatch.Infrastructure\SkillMatch.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

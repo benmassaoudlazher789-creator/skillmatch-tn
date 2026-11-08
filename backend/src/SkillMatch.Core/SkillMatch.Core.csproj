@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Domaine de SkillMatch (candidat, compétence, offre, formation, calcul du score).
+    Aucun paquet ni aucune référence : le cœur métier ne dépend ni de la base
+    ni du web, ce qui le rend simple à tester. Vide pour l'instant.
+  -->
+  <PropertyGroup>
+    <RootNamespace>SkillMatch.Core</RootNamespace>
+  </PropertyGroup>
+</Project>

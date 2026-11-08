@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Tests automatisés de l'API (xUnit v3).
+    OutputType=Exe : xUnit v3 produit un exécutable de tests, c'est obligatoire.
+  -->
+  <PropertyGroup>
+    <RootNamespace>SkillMatch.Tests</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <!-- Démarre l'API en mémoire (WebApplicationFactory), sans vrai port réseau. -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Remove puis Include : garantit un seul « global using Xunit », que le
+      paquet xUnit l'ajoute déjà ou non (un doublon serait un avertissement,
+      donc une erreur ici).
+    -->
+    <Using Remove="Xunit" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SkillMatch.Api\SkillMatch.Api.csproj" />
+  </ItemGroup>
+</Project>

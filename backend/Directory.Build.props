@@ -1,0 +1,26 @@
+<Project>
+  <!--
+    Réglages communs aux 4 projets : MSBuild lit ce fichier automatiquement
+    pour chaque .csproj placé sous backend/. On évite ainsi de répéter
+    les mêmes lignes partout.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Le compilateur signale les risques de NullReferenceException. -->
+    <Nullable>enable</Nullable>
+    <!-- Les using les plus courants (System, System.Linq…) sont ajoutés tout seuls. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!--
+      Un avertissement bloque la compilation : le projet part de zéro,
+      c'est le moment le moins coûteux pour garder un code propre
+      (même logique que flutter analyze côté mobile).
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--
+      Exception : les alertes de sécurité NuGet (NU190x) restent de simples
+      avertissements, pour qu'une faille publiée un jour sur un paquet
+      n'empêche pas de compiler avant d'avoir pu le mettre à jour.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+</Project>
