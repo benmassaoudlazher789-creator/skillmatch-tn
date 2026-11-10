@@ -1,18 +1,42 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:skillmatch_tn/features/auth/data/auth_session.dart';
+import 'package:skillmatch_tn/features/auth/domain/auth_failure.dart';
+import 'package:skillmatch_tn/features/auth/domain/auth_token.dart';
 import 'package:skillmatch_tn/features/auth/presentation/auth_validators.dart';
 import 'package:skillmatch_tn/features/auth/presentation/login_screen.dart';
+import 'package:skillmatch_tn/features/auth/presentation/widgets/auth_submit_button.dart';
+
+import 'support/fake_auth.dart';
 
 void main() {
   // Même principe que les autres tests : MaterialApp sans AppTheme, car
   // google_fonts n'a pas Internet pendant les tests.
-  Future<void> pumpLogin(WidgetTester tester) async {
+  // Une fausse session est toujours fournie : aucun appel réseau réel.
+  Future<void> pumpLogin(
+    WidgetTester tester, {
+    AuthSession? session,
+    String? initialEmail,
+  }) async {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          session: session ?? fakeSession().session,
+          initialEmail: initialEmail,
+        ),
+      ),
+    );
   }
+
+  /// Le bouton principal est-il actif ?
+  bool isButtonEnabled(WidgetTester tester) =>
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed != null;
 
   // Valeurs fictives, propres aux tests (pas de données des maquettes).
   Future<void> fillFields(
@@ -38,7 +62,8 @@ void main() {
   const emailFormatError =
       'Adresse e-mail invalide (exemple : nom@exemple.com).';
   const passwordEmptyError = 'Veuillez saisir votre mot de passe.';
-  const successMessage = "Connexion bientôt disponible : rien n'a été envoyé.";
+  // Titre de l'écran Ajout du CV, ouvert après une connexion réussie.
+  const cvHeading = 'Ajoutez votre CV';
 
   testWidgets('Connexion affiche le titre, les champs et les actions', (
     tester,
@@ -93,39 +118,119 @@ void main() {
     }
   });
 
-  testWidgets('Formulaire vide : une erreur sous chaque champ', (tester) async {
-    await pumpLogin(tester);
+  testWidgets('Formulaire vide : une erreur sous chaque champ, rien envoyé', (
+    tester,
+  ) async {
+    final fake = fakeSession();
+    await pumpLogin(tester, session: fake.session);
     await submit(tester);
 
     expect(find.text(emailEmptyError), findsOneWidget);
     expect(find.text(passwordEmptyError), findsOneWidget);
-    expect(find.text(successMessage), findsNothing);
+    expect(fake.api.loginCalls, isEmpty);
   });
 
   testWidgets('E-mail mal formé refusé, mot de passe non vide accepté', (
     tester,
   ) async {
-    await pumpLogin(tester);
+    final fake = fakeSession();
+    await pumpLogin(tester, session: fake.session);
     await fillFields(tester, email: 'candidat@exemple');
     await submit(tester);
 
     expect(find.text(emailFormatError), findsOneWidget);
     expect(find.text(passwordEmptyError), findsNothing);
-    expect(find.text(successMessage), findsNothing);
+    expect(fake.api.loginCalls, isEmpty);
   });
 
-  testWidgets('Formulaire valide : message temporaire, rien envoyé', (
+  testWidgets(
+    "Formulaire valide : bouton désactivé pendant l'envoi, puis écran du CV",
+    (tester) async {
+      final fake = fakeSession();
+      // Le faux serveur attend notre signal pour répondre.
+      final response = Completer<AuthToken>();
+      fake.api.onLogin = () => response.future;
+
+      await pumpLogin(tester, session: fake.session);
+      // Espaces autour de l'e-mail : ils doivent être retirés à l'envoi.
+      // Un mot de passe court suffit : seule l'absence est refusée ici.
+      await fillFields(tester, email: '  candidat@exemple.com ');
+      await submit(tester);
+
+      // Pendant l'envoi : bouton désactivé, indicateur visible.
+      expect(isButtonEnabled(tester), isFalse);
+      expect(find.byKey(AuthSubmitButton.loadingKey), findsOneWidget);
+      // Un second appui sur le bouton désactivé n'envoie rien de plus.
+      await tester.tap(find.byType(FilledButton), warnIfMissed: false);
+      await tester.pump();
+      expect(fake.api.loginCalls, hasLength(1));
+      expect(fake.api.loginCalls.single.email, 'candidat@exemple.com');
+      expect(fake.api.loginCalls.single.password, 'abc');
+
+      response.complete(fakeToken);
+      await tester.pumpAndSettle();
+
+      expect(fake.store.token, fakeToken.accessToken);
+      expect(find.text(cvHeading), findsOneWidget);
+      expect(find.text('Bon retour'), findsNothing);
+      // Le jeton ne s'affiche nulle part.
+      expect(find.textContaining(fakeToken.accessToken), findsNothing);
+    },
+  );
+
+  // Un test par raison d'échec : message affiché, bouton réactivé, aucun
+  // changement d'écran, aucun jeton rangé.
+  for (final failure in [
+    AuthFailure.invalidCredentials,
+    AuthFailure.tooManyAttempts,
+    AuthFailure.network,
+    AuthFailure.unknown,
+  ]) {
+    testWidgets('Échec ${failure.name} : message en français, on reste ici', (
+      tester,
+    ) async {
+      final fake = fakeSession();
+      fake.api.onLogin = () async => throw AuthException(failure);
+
+      await pumpLogin(tester, session: fake.session);
+      await fillFields(tester);
+      await submit(tester);
+      await tester.pump();
+
+      expect(find.text(failure.message), findsOneWidget);
+      expect(isButtonEnabled(tester), isTrue);
+      expect(find.byKey(AuthSubmitButton.loadingKey), findsNothing);
+      expect(find.text('Bon retour'), findsOneWidget);
+      expect(fake.store.token, isNull);
+    });
+  }
+
+  testWidgets('Jeton impossible à ranger : message dédié, on reste ici', (
     tester,
   ) async {
-    await pumpLogin(tester);
-    // Un mot de passe court suffit ici : seule l'absence de mot de passe
-    // est refusée à la Connexion.
-    await fillFields(tester, password: 'abc');
-    await submit(tester);
+    final fake = fakeSession();
+    fake.store.failOnSave = true;
 
-    expect(find.text(emailEmptyError), findsNothing);
-    expect(find.text(passwordEmptyError), findsNothing);
-    expect(find.text(successMessage), findsOneWidget);
+    await pumpLogin(tester, session: fake.session);
+    await fillFields(tester);
+    await submit(tester);
+    await tester.pump();
+
+    expect(find.text(AuthFailure.storage.message), findsOneWidget);
+    expect(find.text(cvHeading), findsNothing);
+    expect(find.textContaining(fakeToken.accessToken), findsNothing);
+  });
+
+  testWidgets('E-mail reçu en paramètre : déjà rempli', (tester) async {
+    await pumpLogin(tester, initialEmail: 'candidat@exemple.com');
+
+    final field = tester.widget<TextField>(
+      find.descendant(
+        of: find.byKey(LoginScreen.emailFieldKey),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(field.controller?.text, 'candidat@exemple.com');
   });
 
   testWidgets('Le bouton œil affiche puis masque le mot de passe', (

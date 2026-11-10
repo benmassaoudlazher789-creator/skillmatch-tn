@@ -2,27 +2,43 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../data/auth_session.dart';
+import '../domain/auth_failure.dart';
+import 'auth_navigation.dart';
 import 'auth_validators.dart';
 import 'register_screen.dart';
 import 'widgets/auth_scaffold.dart';
+import 'widgets/auth_submit_button.dart';
 import 'widgets/auth_switch_link.dart';
 import 'widgets/labeled_text_field.dart';
 import 'widgets/password_field.dart';
 
 /// Écran 3 : Connexion.
 ///
-/// Le candidat saisit son e-mail et son mot de passe. L'API n'existe pas
-/// encore : on vérifie seulement le formulaire sur le téléphone, et RIEN
-/// n'est envoyé.
+/// Le candidat saisit son e-mail et son mot de passe. Le formulaire est
+/// d'abord contrôlé sur le téléphone, puis envoyé à POST /auth/login. En
+/// cas de succès, le jeton est rangé sur l'appareil et l'écran Ajout du CV
+/// s'ouvre.
 ///
 /// Même structure que l'Inscription : AuthScaffold pour la mise en page,
 /// LabeledTextField et PasswordField pour les champs.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.onCreateAccount});
+  const LoginScreen({
+    super.key,
+    this.onCreateAccount,
+    this.session,
+    this.initialEmail,
+  });
 
   /// Action du lien « Créer un compte ». Par défaut, il ouvre l'Inscription
   /// à la place de la Connexion (voir _openRegister).
   final VoidCallback? onCreateAccount;
+
+  /// Connexion à l'API. Les tests en donnent une fausse ; sinon, la vraie.
+  final AuthSession? session;
+
+  /// E-mail déjà rempli (après une inscription dont la connexion a échoué).
+  final String? initialEmail;
 
   // Clés qui permettent aux tests de retrouver chaque champ.
   static const emailFieldKey = Key('login_email');
@@ -36,32 +52,79 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Clé du formulaire : elle permet de valider tous les champs d'un coup.
   final _formKey = GlobalKey<FormState>();
 
+  /// Contrôleurs : ils donnent accès au texte saisi pour l'envoyer.
+  late final TextEditingController _emailController;
+  final _passwordController = TextEditingController();
+
   /// Pas d'erreur affichée avant le premier essai (comme à l'Inscription).
   AutovalidateMode _autovalidateMode = AutovalidateMode.disabled;
 
-  void _submit() {
+  /// Vrai pendant l'appel à l'API : le bouton est alors désactivé.
+  bool _isSubmitting = false;
+
+  AuthSession get _session => widget.session ?? defaultAuthSession;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    // « Terminé » sur le clavier pendant un envoi : on ignore.
+    if (_isSubmitting) return;
+
     final isValid = _formKey.currentState!.validate();
     if (!isValid) {
       setState(() => _autovalidateMode = AutovalidateMode.onUserInteraction);
       return;
     }
-    // Ferme le clavier pour que le message soit bien visible.
+    // Ferme le clavier pour que le message éventuel soit bien visible.
     FocusScope.of(context).unfocus();
-    // Message honnête : l'API n'existe pas encore, rien ne part.
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text("Connexion bientôt disponible : rien n'a été envoyé."),
-        ),
+    setState(() => _isSubmitting = true);
+
+    String? error;
+    try {
+      await _session.login(
+        // Espaces retirés autour de l'e-mail, mais jamais dans le mot de
+        // passe : un espace peut en faire partie.
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+    } on AuthException catch (e) {
+      error = e.message;
+    } catch (_) {
+      // Erreur imprévue : message générique, jamais le détail technique.
+      error = AuthFailure.unknown.message;
+    }
+
+    // L'écran a pu être fermé pendant l'attente.
+    if (!mounted) return;
+
+    if (error != null) {
+      setState(() => _isSubmitting = false);
+      showAuthMessage(context, error);
+      return;
+    }
+    // Succès : _isSubmitting reste vrai, le bouton reste désactivé pendant
+    // l'animation vers l'écran suivant.
+    openHomeAfterSignIn(context);
   }
 
   /// Remplace la Connexion par l'Inscription (pushReplacement) : l'écran
   /// en dessous reste Bienvenue, et le bouton retour y ramène directement.
   void _openRegister() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => RegisterScreen(session: widget.session),
+      ),
     );
   }
 
@@ -82,14 +145,15 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const LabeledTextField(
+              LabeledTextField(
                 fieldKey: LoginScreen.emailFieldKey,
+                controller: _emailController,
                 label: 'Adresse e-mail',
                 hintText: 'nom@exemple.com',
                 prefixIcon: Icons.mail_outline_rounded,
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
-                autofillHints: [AutofillHints.email],
+                autofillHints: const [AutofillHints.email],
                 autocorrect: false,
                 enableSuggestions: false,
                 validator: AuthValidators.email,
@@ -97,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: AppSpacing.md),
               PasswordField(
                 fieldKey: LoginScreen.passwordFieldKey,
+                controller: _passwordController,
                 autofillHints: const [AutofillHints.password],
                 validator: AuthValidators.passwordRequired,
                 // « Terminé » sur le clavier = appui sur le bouton.
@@ -114,16 +179,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              FilledButton(
+              AuthSubmitButton(
+                label: 'Se connecter',
+                isLoading: _isSubmitting,
                 onPressed: _submit,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Se connecter'),
-                    SizedBox(width: AppSpacing.sm),
-                    Icon(Icons.arrow_forward_rounded, size: 20),
-                  ],
-                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               AuthSwitchLink(

@@ -15,6 +15,7 @@ class PasswordField extends StatefulWidget {
     required this.autofillHints,
     this.validator,
     this.onFieldSubmitted,
+    this.controller,
   });
 
   /// Clé posée sur le champ lui-même (pratique pour les tests).
@@ -30,6 +31,9 @@ class PasswordField extends StatefulWidget {
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onFieldSubmitted;
 
+  /// Permet à l'écran de lire le mot de passe saisi pour l'envoyer à l'API.
+  final TextEditingController? controller;
+
   @override
   State<PasswordField> createState() => _PasswordFieldState();
 }
@@ -42,6 +46,7 @@ class _PasswordFieldState extends State<PasswordField> {
   Widget build(BuildContext context) {
     return LabeledTextField(
       fieldKey: widget.fieldKey,
+      controller: widget.controller,
       label: 'Mot de passe',
       helperText: widget.helperText,
       prefixIcon: Icons.lock_outline_rounded,
