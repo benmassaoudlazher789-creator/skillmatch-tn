@@ -13,6 +13,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <!-- Pour lire la chaîne de connexion via IConfiguration sans dépendre d'ASP.NET Core. -->
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <!-- Hachage des mots de passe : bibliothèque connue plutôt qu'un algorithme écrit à la main. -->
+    <PackageReference Include="BCrypt.Net-Next" />
   </ItemGroup>
 
   <ItemGroup>

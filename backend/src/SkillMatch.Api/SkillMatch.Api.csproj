@@ -17,6 +17,8 @@
     -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <!-- Lecture et contrôle des jetons JWT envoyés par l'application mobile. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
   </ItemGroup>
 
   <ItemGroup>

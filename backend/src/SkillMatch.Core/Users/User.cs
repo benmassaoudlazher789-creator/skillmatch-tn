@@ -15,7 +15,8 @@ public sealed class User
     // 254 caractères : longueur maximale pratique d'une adresse e-mail.
     public const int MaxEmailLength = 254;
 
-    // Large marge : un hash PBKDF2 encodé fait environ 85 caractères.
+    // Large marge : un hash BCrypt fait 60 caractères. Garder 500 laisse la
+    // place à un autre algorithme plus tard, sans nouvelle migration.
     public const int MaxPasswordHashLength = 500;
 
     public Guid Id { get; private set; }
@@ -27,7 +28,7 @@ public sealed class User
 
     /// <summary>
     /// Hash du mot de passe, jamais le mot de passe lui-même.
-    /// Le calcul du hash sera fait à l'étape Inscription.
+    /// Il est calculé par <see cref="IPasswordHasher"/> (BCrypt, dans l'infrastructure).
     /// </summary>
     public string PasswordHash { get; private set; } = string.Empty;
 
@@ -48,7 +49,7 @@ public sealed class User
         var normalizedName = fullName.Trim();
         // Normalisation faite ici, dans le domaine : « Ali@X.com » et « ali@x.com »
         // deviennent la même valeur, donc l'index unique simple suffit en base.
-        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var normalizedEmail = NormalizeEmail(email);
 
         if (normalizedName.Length > MaxFullNameLength)
         {
@@ -86,5 +87,16 @@ public sealed class User
             PasswordHash = passwordHash,
             CreatedAt = DateTimeOffset.UtcNow,
         };
+    }
+
+    /// <summary>
+    /// Forme unique d'une adresse : sans espaces autour et en minuscules.
+    /// Publique pour que la connexion cherche l'adresse exactement sous la forme
+    /// où l'inscription l'a enregistrée (une seule règle, à un seul endroit).
+    /// </summary>
+    public static string NormalizeEmail(string email)
+    {
+        ArgumentNullException.ThrowIfNull(email);
+        return email.Trim().ToLowerInvariant();
     }
 }

@@ -23,6 +23,16 @@ public sealed class UserTests
     }
 
     [Fact]
+    public void NormalizeEmail_DonneLaMemeFormeQueCreate()
+    {
+        // La connexion cherche avec NormalizeEmail : il doit produire exactement
+        // ce que Create enregistre, sinon un compte deviendrait introuvable.
+        const string saisie = "  Candidat@Exemple.TN ";
+
+        Assert.Equal(User.Create(NomExemple, saisie, HashExemple).Email, User.NormalizeEmail(saisie));
+    }
+
+    [Fact]
     public void Create_GenereIdEtDateUtc()
     {
         var user = User.Create(NomExemple, EmailExemple, HashExemple);

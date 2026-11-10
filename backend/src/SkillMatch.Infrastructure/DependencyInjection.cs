@@ -1,6 +1,9 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SkillMatch.Core.Users;
+using SkillMatch.Infrastructure.Auth;
 using SkillMatch.Infrastructure.Persistence;
 
 namespace SkillMatch.Infrastructure;
@@ -13,6 +16,9 @@ public static class DependencyInjection
 {
     /// <summary>Nom de la clé, jamais sa valeur : la valeur vit dans user-secrets.</summary>
     public const string ConnectionStringName = "SkillMatch";
+
+    /// <summary>Facteur BCrypt : 12 en production (appsettings.json), 4 dans les tests pour aller vite.</summary>
+    public const string PasswordWorkFactorKey = "PasswordHashing:WorkFactor";
 
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
@@ -35,6 +41,37 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString);
         });
 
+        // Singleton : le hasher ne garde aucun état propre à une requête.
+        // La configuration est lue dans le lambda, donc au premier usage :
+        // les valeurs ajoutées par les tests sont déjà en place à ce moment-là.
+        services.AddSingleton<IPasswordHasher>(serviceProvider =>
+        {
+            var value = serviceProvider.GetRequiredService<IConfiguration>()[PasswordWorkFactorKey];
+            return new BcryptPasswordHasher(ParseWorkFactor(value));
+        });
+
+        // Scoped, comme le DbContext qu'il utilise : un par requête HTTP.
+        services.AddScoped<AuthService>();
+
         return services;
+    }
+
+    private static int ParseWorkFactor(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return BcryptPasswordHasher.DefaultWorkFactor;
+        }
+
+        if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var workFactor)
+            && workFactor >= BcryptPasswordHasher.MinWorkFactor
+            && workFactor <= BcryptPasswordHasher.MaxWorkFactor)
+        {
+            return workFactor;
+        }
+
+        throw new InvalidOperationException(
+            $"'{PasswordWorkFactorKey}' doit être un entier entre {BcryptPasswordHasher.MinWorkFactor} " +
+            $"et {BcryptPasswordHasher.MaxWorkFactor} (valeur actuelle : « {value} »).");
     }
 }
