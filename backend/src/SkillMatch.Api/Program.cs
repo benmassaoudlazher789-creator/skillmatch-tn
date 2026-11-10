@@ -1,4 +1,5 @@
 using SkillMatch.Api.Auth;
+using SkillMatch.Api.Cors;
 using SkillMatch.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +14,20 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // requêtes dans les logs, donc des mots de passe.
 builder.Services.AddApiAuth();
 
+// Autorise l'application Flutter lancée dans Chrome (voir Cors/DevCors.cs).
+builder.Services.AddDevCors();
+
 var app = builder.Build();
+
+// CORS seulement en développement, et EN PREMIER : placé avant la limite
+// d'essais, il ajoute aussi son en-tête aux réponses 429. Sinon Chrome
+// bloquerait ces réponses et l'application croirait à une panne réseau au
+// lieu d'afficher « Trop de tentatives ». Il répond aussi lui-même aux
+// requêtes préalables OPTIONS, qui ne consomment donc pas d'essai.
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(DevCors.PolicyName);
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
