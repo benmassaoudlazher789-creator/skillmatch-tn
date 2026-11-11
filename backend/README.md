@@ -6,9 +6,9 @@ API ASP.NET Core (.NET 10) de l'application mobile SkillMatch TN.
 
 | Projet | Rôle |
 |---|---|
-| `src/SkillMatch.Core` | Domaine (compétences, offres, score). Aucune dépendance. |
-| `src/SkillMatch.Infrastructure` | Accès à PostgreSQL via Entity Framework Core et Npgsql. |
-| `src/SkillMatch.Api` | Endpoints HTTP : `GET /health`, `POST /auth/register`, `POST /auth/login`. |
+| `src/SkillMatch.Core` | Domaine : comptes, type d'un CV, détection des compétences (fonctions pures). Aucune dépendance. |
+| `src/SkillMatch.Infrastructure` | Accès à PostgreSQL (Entity Framework Core, Npgsql) et lecture des CV (PdfPig, Open XML SDK). |
+| `src/SkillMatch.Api` | Endpoints HTTP : `GET /health`, `POST /auth/register`, `POST /auth/login`, `POST /cv`. |
 | `tests/SkillMatch.Tests` | Tests xUnit v3, avec l'API démarrée en mémoire et une base SQLite en mémoire. |
 
 Les versions des paquets se trouvent toutes dans `Directory.Packages.props`.
@@ -70,6 +70,26 @@ L'API signe ses jetons JWT (HMAC-SHA256) avec la clé `Jwt:SigningKey`. Cette cl
 - **Limite d'essais :** 5 requêtes par minute et par adresse IP sur `/auth/*` (réglage `RateLimiting:Auth:PermitLimit`). Au-delà, l'API répond `429`.
 - **Logs :** jamais de mot de passe ni de corps de requête. Les logs d'audit contiennent l'événement, l'Id du compte et l'adresse IP.
 
+## Analyse du CV : `POST /cv`
+
+| Requête | Réponses |
+|---|---|
+| En-tête `Authorization: Bearer <jeton>`, formulaire `multipart/form-data` avec un seul champ `file` (PDF ou DOCX, 5 Mo au plus) | `200` `{ "skills": ["Dart", "Flutter"] }` (liste vide possible) · `400` formulaire invalide, champ absent, plusieurs fichiers, fichier vide · `401` jeton absent ou expiré · `413` trop volumineux · `415` ni PDF ni DOCX · `422` fichier protégé, illisible ou sans texte · `429` |
+
+Les erreurs ont la forme `{ "code": "no_text", "title": "<message en français>" }`. Le `code` est stable : l'application s'en sert pour choisir son message.
+
+- **Confidentialité (choix validé) :** le CV est lu en mémoire puis oublié. Rien n'est écrit en base ni sur le disque. ASP.NET range d'habitude sur le disque les fichiers reçus de plus de 64 Ko ; ce seuil est relevé pour cette route, donc le fichier reste en mémoire.
+- **Journaux :** seulement le code de réponse et la durée. Jamais de nom de fichier, de texte ni de compétences. Le nom du fichier envoyé n'est même pas lu. Un test vérifie que des marqueurs fictifs placés dans le CV et dans son nom n'apparaissent dans aucun message.
+- **Type du fichier :** reconnu par sa signature (ses premiers octets), jamais par son extension ni par le type annoncé. Un PDF commence par `%PDF-`, un DOCX par `PK` (c'est une archive ZIP). Pour un DOCX, l'archive doit aussi contenir `[Content_Types].xml` et `word/document.xml`, et ne pas contenir de macros. Les anciens fichiers `.doc` ne sont pas acceptés.
+- **Protections :**
+  - 10 pages lues au plus dans un PDF, 100 000 caractères de texte au plus ;
+  - pour un DOCX, 1 000 fichiers et 20 Mo une fois décompressé au plus (contre les « bombes ZIP ») ;
+  - 10 analyses par minute et par compte (réglage `RateLimiting:Cv:PermitLimit`).
+- **Détection :** un dictionnaire d'environ 80 outils, chacun avec ses variantes (`Core/Skills/SkillDictionary.cs`). Majuscules et accents ne comptent pas, et seuls les mots entiers sont reconnus : « Java » n'est pas trouvé dans « JavaScript ». Les mots ambigus ne sont reconnus que sous une forme précise (« golang » pour Go, « vue.js » pour Vue.js). Un outil absent du dictionnaire n'est pas détecté : le candidat l'ajoute lui-même dans l'application.
+- **Limites connues :** pas de lecture des CV scannés (images) : la reconnaissance de texte (OCR) n'est pas prévue. Un PDF protégé par un mot de passe est refusé.
+- **HTTPS :** en local, l'API tourne en `http` et le CV passe en clair sur la machine. C'est acceptable pour développer, mais un vrai déploiement devra passer en HTTPS.
+- **Tests :** les CV de test sont fabriqués pendant les tests, avec un texte fictif. Aucun vrai CV n'est rangé dans le dépôt.
+
 ## Commandes
 
 ```
@@ -121,3 +141,4 @@ dotnet ef database update --project src/SkillMatch.Infrastructure --startup-proj
 
 - **`/health/db` :** une sonde qui contrôle aussi la base, avec `AddDbContextCheck`.
 - **Émulateur Android :** il joint l'API via `http://10.0.2.2:5080`, et non `localhost`.
+- **CORS (développement seulement) :** l'application lancée dans Chrome (`http://localhost:<port>`) peut appeler l'API avec `POST`, `Content-Type` et `Authorization` (voir `Api/Cors/DevCors.cs`).

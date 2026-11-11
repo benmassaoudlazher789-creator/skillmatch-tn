@@ -2,8 +2,10 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using SkillMatch.Core.Cv;
 using SkillMatch.Core.Users;
 using SkillMatch.Infrastructure.Auth;
+using SkillMatch.Infrastructure.Cv;
 using SkillMatch.Infrastructure.Persistence;
 
 namespace SkillMatch.Infrastructure;
@@ -52,6 +54,11 @@ public static class DependencyInjection
 
         // Scoped, comme le DbContext qu'il utilise : un par requête HTTP.
         services.AddScoped<AuthService>();
+
+        // Analyse des CV. Singletons : ni l'un ni l'autre ne garde d'état
+        // entre deux appels (et aucun CV n'est conservé, voir CvAnalyzer).
+        services.AddSingleton<ICvTextExtractor, CvTextExtractor>();
+        services.AddSingleton<CvAnalyzer>();
 
         return services;
     }

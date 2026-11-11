@@ -15,6 +15,9 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <!-- Hachage des mots de passe : bibliothèque connue plutôt qu'un algorithme écrit à la main. -->
     <PackageReference Include="BCrypt.Net-Next" />
+    <!-- Texte des CV : PDF avec PdfPig, DOCX avec l'Open XML SDK. Tout se fait en mémoire. -->
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
   </ItemGroup>
 
   <ItemGroup>

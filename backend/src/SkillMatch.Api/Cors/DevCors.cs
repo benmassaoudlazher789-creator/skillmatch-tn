@@ -25,11 +25,12 @@ public static class DevCors
             // Flutter choisit un port au hasard à chaque lancement : on ne peut
             // pas lister des origines fixes, on vérifie donc l'hôte.
             .SetIsOriginAllowed(IsLocalhostOrigin)
-            // Juste ce qu'il faut pour /auth/register et /auth/login (POST + JSON).
-            // On élargira (GET, Authorization) quand d'autres routes en auront besoin.
+            // Juste ce qu'il faut : POST pour /auth/* et /cv, Content-Type pour
+            // le JSON et le formulaire, Authorization pour le jeton envoyé à /cv.
+            // On ajoutera GET quand une route en aura besoin.
             .WithMethods(HttpMethods.Post)
-            .WithHeaders(HeaderNames.ContentType)));
-        // Pas d'AllowCredentials : le jeton voyagera dans un en-tête, pas dans
+            .WithHeaders(HeaderNames.ContentType, HeaderNames.Authorization)));
+        // Pas d'AllowCredentials : le jeton voyage dans un en-tête, pas dans
         // un cookie, donc le navigateur n'a pas à envoyer de cookies.
 
         return services;

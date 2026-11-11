@@ -17,6 +17,13 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <!-- Remplace PostgreSQL par SQLite en mémoire pendant les tests (voir SkillMatchApiFactory). -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <!--
+      Fabrique de faux CV pendant les tests (PDF avec PdfPig, DOCX avec Open XML).
+      Déjà présents via l'Infrastructure, mais cités ici : les tests s'en servent
+      directement, ils ne doivent pas dépendre d'un détail d'un autre projet.
+    -->
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
   </ItemGroup>
 
   <ItemGroup>

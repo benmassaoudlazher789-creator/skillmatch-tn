@@ -59,6 +59,27 @@ public sealed class DevCorsTests(SkillMatchApiFactory factory)
         Assert.Equal(FlutterWebOrigin, AllowOrigin(response));
     }
 
+    [Fact]
+    public async Task Development_PreflightVersCvAvecJeton_EstAutorise()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        using var devFactory = CreateFactory("Development");
+        using var client = devFactory.CreateClient();
+
+        // L'envoi du CV porte l'en-tête Authorization : Chrome demande d'abord
+        // la permission pour cet en-tête.
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/cv");
+        request.Headers.Add("Origin", FlutterWebOrigin);
+        request.Headers.Add("Access-Control-Request-Method", "POST");
+        request.Headers.Add("Access-Control-Request-Headers", "authorization");
+
+        using var response = await client.SendAsync(request, ct);
+
+        Assert.Equal(FlutterWebOrigin, AllowOrigin(response));
+        Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Headers", out var headers));
+        Assert.Contains("authorization", string.Join(",", headers), StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("http://exemple.com")]
     [InlineData("http://localhost.exemple.com")]

@@ -18,6 +18,9 @@
     <!-- Comptes : hachage BCrypt des mots de passe et jetons JWT -->
     <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <!-- Lecture des CV : texte d'un PDF (PdfPig) et d'un DOCX (Open XML SDK de Microsoft). -->
+    <PackageVersion Include="PdfPig" Version="0.1.11" />
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.3.0" />
     <!-- Tests -->
     <!-- Base SQLite en mémoire : les tests n'ont pas besoin de PostgreSQL. -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
