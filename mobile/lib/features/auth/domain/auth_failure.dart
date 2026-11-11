@@ -46,6 +46,11 @@ enum AuthFailure {
   final String message;
 }
 
+/// Message affiché sur la Connexion quand le jeton n'est plus accepté par
+/// l'API (401). Il est ici, côté comptes, car c'est la Connexion qui
+/// l'affiche ; l'analyse du CV s'en sert aussi (CvFailure.sessionExpired).
+const sessionExpiredMessage = 'Session expirée, reconnectez-vous.';
+
 /// Erreur levée par AuthApi et AuthSession.
 ///
 /// Elle ne contient JAMAIS le corps de la réponse ni l'erreur d'origine :

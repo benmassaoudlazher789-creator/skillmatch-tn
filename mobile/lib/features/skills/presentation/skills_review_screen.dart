@@ -3,46 +3,72 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/widgets/skill_chip.dart';
+import '../../auth/presentation/auth_navigation.dart';
 // Widgets partagés avec Inscription et Connexion. Ils pourront être
 // déplacés dans core/ plus tard, maintenant que plusieurs écrans s'en
 // servent.
 import '../../auth/presentation/widgets/auth_scaffold.dart';
 import '../../auth/presentation/widgets/labeled_text_field.dart';
+import '../../cv/data/cv_analysis_service.dart';
+import '../../cv/data/cv_picker.dart';
+import '../../cv/domain/cv_failure.dart';
 import '../../offers/presentation/offers_screen.dart';
-import '../data/sample_skills.dart';
 import '../domain/skill_rules.dart';
+
+/// Les trois états de l'écran.
+enum _Status { loading, failed, ready }
 
 /// Écran 5 : Vos compétences.
 ///
-/// Le candidat relit la liste de ses compétences, en retire et en ajoute à
-/// la main. Pour l'instant, la liste de départ est un exemple en mémoire
-/// (aucune analyse réelle du CV), et un bandeau le dit clairement.
-/// Les compétences sont « déclarées » par le candidat : rien n'est contrôlé.
+/// À l'ouverture, l'écran envoie le CV au serveur et affiche « Analyse en
+/// cours… ». Ensuite :
+/// - succès : la liste des compétences repérées, que le candidat relit,
+///   complète ou corrige à la main ;
+/// - échec : un message clair et un bouton « Réessayer » ;
+/// - session expirée (401) : retour à la Connexion.
+/// Les compétences retenues sont celles que le candidat garde : la
+/// détection automatique n'est qu'un point de départ.
 class SkillsReviewScreen extends StatefulWidget {
-  const SkillsReviewScreen({super.key, this.initialSkills = sampleSkills});
+  const SkillsReviewScreen({super.key, required this.file, this.service});
 
-  /// Liste de départ. Les tests passent leur propre liste.
-  final List<String> initialSkills;
+  /// Fichier choisi sur l'écran Ajout du CV.
+  final PickedCvFile file;
+
+  /// Analyse du CV. Les tests en donnent une fausse ; sinon, la vraie.
+  final CvAnalysisService? service;
 
   // Clés qui permettent aux tests de retrouver le champ et les boutons.
   static const skillFieldKey = Key('skills_field');
   static const addButtonKey = Key('skills_add');
   static const offersButtonKey = Key('skills_offers');
+  static const retryButtonKey = Key('skills_retry');
 
-  static const exampleBanner =
-      "Exemple de résultat : l'analyse réelle arrivera dans une prochaine "
-      'version.';
+  static const loadingText = 'Analyse en cours…';
   static const atLeastOneHint =
       'Ajoutez au moins une compétence pour voir les offres.';
+  static const noSkillFoundHint =
+      "Aucune compétence n'a été reconnue dans votre CV. Ajoutez-les "
+      'ci-dessous.';
 
   @override
   State<SkillsReviewScreen> createState() => _SkillsReviewScreenState();
 }
 
 class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
-  /// Copie modifiable de la liste de départ (List.of crée une nouvelle
-  /// liste : on ne touche jamais à la constante sampleSkills).
-  late final List<String> _skills = List.of(widget.initialSkills);
+  _Status _status = _Status.loading;
+
+  /// Message de l'échec, affiché quand _status vaut failed.
+  String _error = '';
+
+  /// Liste modifiable, remplie par la réponse du serveur.
+  List<String> _skills = [];
+
+  /// Vrai si le serveur n'a reconnu aucune compétence : on l'explique au
+  /// lieu d'afficher seulement « Aucune compétence ».
+  bool _noneFound = false;
+
+  /// Vrai pendant un envoi.
+  bool _isRunning = false;
 
   /// Le Form sert à afficher l'erreur sous le champ, comme dans
   /// Inscription et Connexion.
@@ -51,11 +77,63 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
   /// Le contrôleur permet de vider le champ après un ajout réussi.
   final _controller = TextEditingController();
 
+  CvAnalysisService get _service => widget.service ?? defaultCvAnalysisService;
+
+  @override
+  void initState() {
+    super.initState();
+    _analyze();
+  }
+
   @override
   void dispose() {
     // Un contrôleur doit être libéré quand l'écran disparaît.
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Envoie le CV. Appelée à l'ouverture et par « Réessayer ».
+  Future<void> _analyze() async {
+    // Un double appui rapide sur « Réessayer » n'envoie le CV qu'une fois.
+    if (_isRunning) return;
+    _isRunning = true;
+    // Au premier appel (depuis initState), l'état vaut déjà loading : pas
+    // besoin de setState, qui n'a pas sa place dans initState.
+    if (_status != _Status.loading) {
+      setState(() => _status = _Status.loading);
+    }
+
+    List<String>? skills;
+    CvFailure? failure;
+    try {
+      skills = await _service.analyze(widget.file);
+    } on CvException catch (e) {
+      failure = e.failure;
+    } catch (_) {
+      // Erreur imprévue : message générique, jamais le détail technique
+      // (il pourrait citer le fichier ou la réponse).
+      failure = CvFailure.unknown;
+    }
+    _isRunning = false;
+
+    // Le candidat a pu revenir en arrière pendant l'attente : on ne touche
+    // plus à un écran fermé.
+    if (!mounted) return;
+
+    if (failure == CvFailure.sessionExpired) {
+      openLoginAfterSessionExpired(context);
+      return;
+    }
+    setState(() {
+      if (skills != null) {
+        _status = _Status.ready;
+        _skills = List.of(skills);
+        _noneFound = skills.isEmpty;
+      } else {
+        _status = _Status.failed;
+        _error = (failure ?? CvFailure.unknown).message;
+      }
+    });
   }
 
   void _add() {
@@ -86,45 +164,54 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final ready = _status == _Status.ready;
 
     return AuthScaffold(
       appBarTitle: 'Compétences',
       heading: 'Vos compétences',
-      subtitle: 'Retirez ou ajoutez des compétences.',
+      subtitle:
+          'Relisez les compétences repérées dans votre CV, retirez-en ou '
+          'ajoutez-en.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildExampleBanner(text),
-          const SizedBox(height: AppSpacing.lg),
-          _buildSkillsCard(text),
+          switch (_status) {
+            _Status.loading => _buildLoadingCard(text),
+            _Status.failed => _buildErrorCard(text),
+            _Status.ready => _buildSkillsCard(text),
+          },
           const SizedBox(height: AppSpacing.xl),
-          if (_skills.isEmpty) ...[
-            Text(
-              SkillsReviewScreen.atLeastOneHint,
-              textAlign: TextAlign.center,
-              style: text.bodySmall?.copyWith(color: AppColors.carbon),
+          if (ready) ...[
+            if (_skills.isEmpty) ...[
+              Text(
+                SkillsReviewScreen.atLeastOneHint,
+                textAlign: TextAlign.center,
+                style: text.bodySmall?.copyWith(color: AppColors.carbon),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            // onPressed: null désactive le bouton quand la liste est vide.
+            FilledButton(
+              key: SkillsReviewScreen.offersButtonKey,
+              onPressed: _skills.isEmpty ? null : _showOffers,
+              // Flexible : le texte passe à la ligne au lieu de déborder
+              // (petit écran ou texte agrandi).
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text('Voir les offres', textAlign: TextAlign.center),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Icon(Icons.arrow_forward_rounded, size: 20),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
-          // onPressed: null désactive le bouton quand la liste est vide.
-          FilledButton(
-            key: SkillsReviewScreen.offersButtonKey,
-            onPressed: _skills.isEmpty ? null : _showOffers,
-            // Flexible : le texte passe à la ligne au lieu de déborder
-            // (petit écran ou texte agrandi).
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text('Voir les offres', textAlign: TextAlign.center),
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Icon(Icons.arrow_forward_rounded, size: 20),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          // Revient à l'écran Ajout du CV, qui est juste en dessous.
+          // Revient à l'écran Ajout du CV, qui est juste en dessous. Visible
+          // dans les trois états : pendant l'analyse, le candidat peut
+          // changer d'avis ; après un échec, choisir un autre fichier.
           OutlinedButton(
             onPressed: () => Navigator.maybePop(context),
             child: const Row(
@@ -146,42 +233,11 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
     );
   }
 
-  /// Bandeau ambre : la liste n'est qu'un exemple, pas une vraie analyse.
-  Widget _buildExampleBanner(TextTheme text) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.amberSoft,
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.amber),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.info_outline_rounded,
-            size: 18,
-            color: AppColors.onAmberSoft,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              SkillsReviewScreen.exampleBanner,
-              style: text.bodySmall?.copyWith(color: AppColors.onAmberSoft),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Carte blanche : titre et compteur, puces, champ d'ajout, information.
-  Widget _buildSkillsCard(TextTheme text) {
-    final count = _skills.length;
-
+  /// Carte blanche commune aux trois états (même carte que sur l'écran
+  /// Ajout du CV).
+  Widget _card({required Widget child}) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      // Même carte que sur l'écran Ajout du CV.
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -193,6 +249,93 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
           ),
         ],
       ),
+      child: child,
+    );
+  }
+
+  /// Pendant l'envoi et la lecture du CV par le serveur.
+  Widget _buildLoadingCard(TextTheme text) {
+    // liveRegion : le lecteur d'écran annonce « Analyse en cours… ».
+    return _card(
+      child: Semantics(
+        liveRegion: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppSpacing.sm),
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.emerald),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              SkillsReviewScreen.loadingText,
+              textAlign: TextAlign.center,
+              style: text.titleMedium?.copyWith(color: AppColors.navy),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Le serveur SkillMatch lit votre CV. Cela prend en général '
+              'quelques secondes.',
+              textAlign: TextAlign.center,
+              style: text.bodySmall?.copyWith(color: AppColors.carbon),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Après un échec : message et bouton « Réessayer ».
+  Widget _buildErrorCard(TextTheme text) {
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            liveRegion: true,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 20,
+                  color: AppColors.error,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                // Expanded : le message passe à la ligne au lieu de déborder.
+                Expanded(
+                  child: Text(
+                    _error,
+                    style: text.bodyMedium?.copyWith(color: AppColors.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton(
+            key: SkillsReviewScreen.retryButtonKey,
+            onPressed: _analyze,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.refresh_rounded, size: 20),
+                SizedBox(width: AppSpacing.sm),
+                Flexible(child: Text('Réessayer', textAlign: TextAlign.center)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Carte du résultat : titre et compteur, puces, champ d'ajout,
+  /// information.
+  Widget _buildSkillsCard(TextTheme text) {
+    final count = _skills.length;
+
+    return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -230,7 +373,11 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
           const SizedBox(height: AppSpacing.md),
           if (_skills.isEmpty)
             Text(
-              'Aucune compétence pour le moment.',
+              // Liste vide dès la réponse : on dit pourquoi. Liste vidée à
+              // la main : simple constat.
+              _noneFound
+                  ? SkillsReviewScreen.noSkillFoundHint
+                  : 'Aucune compétence pour le moment.',
               style: text.bodySmall?.copyWith(color: AppColors.carbon),
             )
           else
@@ -291,9 +438,10 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Ces compétences sont déclarées par vous. Elles serviront '
-                  'à comparer votre profil aux offres ; le résultat sera '
-                  'une aide, pas une garantie.',
+                  'Cette liste est repérée automatiquement dans votre CV et '
+                  'peut être incomplète : relisez-la. Elle servira à '
+                  'comparer votre profil aux offres ; le résultat sera une '
+                  'aide, pas une garantie.',
                   style: text.bodySmall?.copyWith(color: AppColors.carbon),
                 ),
               ),

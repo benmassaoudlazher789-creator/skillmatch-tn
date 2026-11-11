@@ -5,21 +5,23 @@
 /// vite (sans écran) et l'écran ne fait que les appeler.
 ///
 /// Limite assumée : on regarde l'extension du nom (« .pdf », « .docx »),
-/// pas le contenu du fichier, car l'application ne lit pas le fichier.
-/// Le vrai contrôle du contenu sera fait plus tard par le serveur.
+/// pas le contenu du fichier. Le vrai contrôle du contenu est fait par le
+/// serveur, qui reconnaît un PDF ou un DOCX à ses premiers octets.
 abstract final class CvFileRules {
-  /// Extensions acceptées, en minuscules.
-  static const allowedExtensions = ['pdf', 'doc', 'docx'];
+  /// Extensions acceptées, en minuscules. Les mêmes que l'API : l'ancien
+  /// format Word (.doc) n'est pas lu par le serveur, on le refuse donc dès
+  /// le choix plutôt qu'après un envoi inutile.
+  static const allowedExtensions = ['pdf', 'docx'];
 
-  /// 5 Mo, en octets (1 Mo = 1024 × 1024 octets).
+  /// 5 Mo, en octets (1 Mo = 1024 × 1024 octets). Même limite que l'API.
   static const maxSizeInBytes = 5 * 1024 * 1024;
 
   /// Texte d'aide affiché sous le titre de la carte.
-  static const formatsHint = 'PDF, DOC ou DOCX (5 Mo maximum)';
+  static const formatsHint = 'PDF ou DOCX (5 Mo maximum)';
 
   // Messages d'erreur, en français clair.
   static const formatError =
-      'Format non accepté : choisissez un fichier PDF, DOC ou DOCX.';
+      'Format non accepté : choisissez un fichier PDF ou DOCX.';
   static const emptyError = 'Ce fichier est vide.';
   static const pickerError =
       "Impossible d'ouvrir le sélecteur de fichiers. Réessayez.";

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/widgets/info_banner.dart';
 import '../data/auth_session.dart';
 import '../domain/auth_failure.dart';
 import 'auth_navigation.dart';
@@ -28,6 +29,7 @@ class LoginScreen extends StatefulWidget {
     this.onCreateAccount,
     this.session,
     this.initialEmail,
+    this.initialMessage,
   });
 
   /// Action du lien « Créer un compte ». Par défaut, il ouvre l'Inscription
@@ -39,6 +41,14 @@ class LoginScreen extends StatefulWidget {
 
   /// E-mail déjà rempli (après une inscription dont la connexion a échoué).
   final String? initialEmail;
+
+  /// Message affiché en haut du formulaire à l'ouverture (par exemple
+  /// « Session expirée, reconnectez-vous »), ou null.
+  ///
+  /// Un bandeau plutôt qu'un message en bas de l'écran : il reste visible
+  /// tant que le candidat n'est pas reconnecté, au lieu de disparaître au
+  /// bout de quelques secondes.
+  final String? initialMessage;
 
   // Clés qui permettent aux tests de retrouver chaque champ.
   static const emailFieldKey = Key('login_email');
@@ -145,6 +155,12 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (widget.initialMessage case final message?) ...[
+                // liveRegion : le lecteur d'écran lit le message à
+                // l'ouverture de l'écran.
+                Semantics(liveRegion: true, child: InfoBanner.neutral(message)),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               LabeledTextField(
                 fieldKey: LoginScreen.emailFieldKey,
                 controller: _emailController,

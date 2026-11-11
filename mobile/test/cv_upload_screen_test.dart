@@ -5,6 +5,8 @@ import 'package:skillmatch_tn/features/cv/data/cv_picker.dart';
 import 'package:skillmatch_tn/features/cv/domain/cv_file_rules.dart';
 import 'package:skillmatch_tn/features/cv/presentation/cv_upload_screen.dart';
 
+import 'support/fake_cv.dart';
+
 /// Faux sélecteur : renvoie le fichier qu'on lui a donné, sans ouvrir de
 /// vraie fenêtre système. null = l'utilisateur a annulé.
 class FakeCvPicker implements CvPicker {
@@ -24,27 +26,49 @@ void main() {
   const mega = 1024 * 1024;
 
   // Fichiers fictifs, propres aux tests.
+  // readBytes : contenu d'exemple, lu seulement à l'envoi.
   final validPdf = PickedCvFile(
     name: 'cv_candidat.pdf',
     sizeInBytes: (1.2 * mega).round(),
+    readBytes: fakePdfBytes,
   );
-  const validDocx = PickedCvFile(name: 'cv_v2.docx', sizeInBytes: 350 * 1024);
-  const imageFile = PickedCvFile(name: 'photo.png', sizeInBytes: 1000);
-  const hugeFile = PickedCvFile(name: 'cv_lourd.pdf', sizeInBytes: 6 * mega);
+  const validDocx = PickedCvFile(
+    name: 'cv_v2.docx',
+    sizeInBytes: 350 * 1024,
+    readBytes: fakePdfBytes,
+  );
+  const imageFile = PickedCvFile(
+    name: 'photo.png',
+    sizeInBytes: 1000,
+    readBytes: fakePdfBytes,
+  );
+  const hugeFile = PickedCvFile(
+    name: 'cv_lourd.pdf',
+    sizeInBytes: 6 * mega,
+    readBytes: fakePdfBytes,
+  );
 
   // Grand titre de l'écran Vos compétences : sert à savoir s'il est ouvert.
   const skillsHeading = 'Vos compétences';
 
   late FakeCvPicker picker;
+  late FakeCvApi api;
 
   // Même principe que les autres tests : MaterialApp sans AppTheme, car
   // google_fonts n'a pas Internet pendant les tests.
+  // Une fausse analyse est toujours fournie : aucun appel réseau réel.
   Future<void> pumpScreen(WidgetTester tester) async {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     picker = FakeCvPicker();
-    await tester.pumpWidget(MaterialApp(home: CvUploadScreen(picker: picker)));
+    final fake = fakeCvService();
+    api = fake.api;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CvUploadScreen(picker: picker, analysisService: fake.service),
+      ),
+    );
   }
 
   Future<void> tapVisible(WidgetTester tester, Finder finder) async {
@@ -75,10 +99,18 @@ void main() {
     expect(find.text(CvFileRules.formatsHint), findsOneWidget);
     expect(find.text('Choisir un fichier'), findsOneWidget);
     expect(find.text('Analyser mon CV'), findsOneWidget);
+    // Texte d'information « option A », mot pour mot.
     expect(
-      find.textContaining('Votre CV reste sur votre téléphone'),
+      find.text(
+        'Votre CV est envoyé au serveur SkillMatch pour détecter vos '
+        'compétences. Il est lu puis oublié : ni le fichier ni son texte ne '
+        'sont conservés.',
+      ),
       findsOneWidget,
     );
+    // L'ancien texte (« rien n'est envoyé ») a disparu.
+    expect(find.textContaining('reste sur votre téléphone'), findsNothing);
+    expect(find.textContaining('prochaine version'), findsNothing);
     expect(find.byTooltip('Retirer le fichier'), findsNothing);
     expect(find.byIcon(Icons.error_outline_rounded), findsNothing);
   });
@@ -121,6 +153,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(skillsHeading), findsOneWidget);
     expect(find.text('Ajoutez votre CV'), findsNothing);
+    // Le fichier choisi a été envoyé une fois, avec son extension.
+    expect(api.calls, hasLength(1));
+    expect(api.calls.single.extension, 'pdf');
+    expect(find.byTooltip('Retirer Flutter'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();

@@ -9,14 +9,15 @@ void main() {
       CvFileRules.validate(fileName: name, sizeInBytes: size);
 
   group('CvFileRules.validate', () {
-    test('PDF, DOC et DOCX acceptés, majuscules comprises', () {
+    test('PDF et DOCX acceptés, majuscules comprises', () {
       expect(validate('cv.pdf', 1000), isNull);
-      expect(validate('cv.doc', 1000), isNull);
       expect(validate('cv.docx', 1000), isNull);
       expect(validate('MON_CV.PDF', 1000), isNull);
     });
 
     test('autres formats et noms sans extension refusés', () {
+      // Ancien format Word : le serveur ne le lit pas.
+      expect(validate('cv.doc', 1000), CvFileRules.formatError);
       expect(validate('cv.png', 1000), CvFileRules.formatError);
       expect(validate('cv.pdf.exe', 1000), CvFileRules.formatError);
       expect(validate('cv', 1000), CvFileRules.formatError);

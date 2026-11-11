@@ -278,6 +278,32 @@ void main() {
     expect(find.text('Bon retour'), findsOneWidget);
   });
 
+  testWidgets('Sans message d\'ouverture, aucun bandeau', (tester) async {
+    await pumpLogin(tester);
+    expect(find.text(sessionExpiredMessage), findsNothing);
+  });
+
+  testWidgets('Session expirée : le message reste affiché en haut', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: LoginScreen(
+          session: fakeSession().session,
+          initialMessage: sessionExpiredMessage,
+        ),
+      ),
+    );
+    // Bien après la durée d'un SnackBar (4 s) : le bandeau est toujours là.
+    await tester.pump(const Duration(seconds: 10));
+
+    expect(find.text(sessionExpiredMessage), findsOneWidget);
+    expect(find.text('Bon retour'), findsOneWidget);
+  });
+
   group('AuthValidators.passwordRequired', () {
     test('mot de passe : seulement non vide', () {
       expect(AuthValidators.passwordRequired(null), isNotNull);
