@@ -23,6 +23,11 @@ public sealed class MatchScorerTests
     // Seulement des souhaitées : 1/3 = 33,33 → 33
     [InlineData(0, 0, 1, 3, 33)]
     [InlineData(0, 0, 0, 0, 0)]
+    // Cas repris du test mobile (match_score_test.dart), avant sa suppression :
+    // seulement des requises, 1 sur 2 = 50.
+    [InlineData(1, 2, 0, 0, 50)]
+    // 70 × 1 + 30 × 99/100 = 99,7 → 99 : jamais 100 s'il manque une compétence.
+    [InlineData(1, 1, 99, 100, 99)]
     public void Percent(int requiredHave, int requiredTotal, int preferredHave, int preferredTotal, int expected) =>
         Assert.Equal(expected, MatchScorer.Percent(requiredHave, requiredTotal, preferredHave, preferredTotal));
 
@@ -66,6 +71,40 @@ public sealed class MatchScorerTests
         Assert.Equal(0, match.Score);
         Assert.Equal(new[] { "Python" }, match.RequiredMissing);
         Assert.Equal(new[] { "SQL" }, match.PreferredMissing);
+    }
+
+    // ---- Cas repris du test mobile (match_score_test.dart) ----
+
+    [Fact]
+    public void CentSouhaitees_UneManque_99()
+    {
+        var preferred = Enumerable.Range(0, 100).Select(i => $"S{i}").ToArray();
+        var candidate = Enumerable.Range(0, 99).Select(i => $"S{i}").Append("A").ToArray();
+
+        var match = Score(["A"], preferred, candidate);
+
+        Assert.Equal(99, match.Score);
+        Assert.Equal(new[] { "S99" }, match.PreferredMissing);
+    }
+
+    [Fact]
+    public void MajusculesEtEspacesEnTropIgnores_PucesALEcritureDeLOffre()
+    {
+        // « fig  ma » (espace au milieu) n'est pas « Figma » : deux mots.
+        var match = Score(["Dart", "Flutter", "Git"], ["Docker", "Figma"], "dart", "FLUTTER", "  git  ", "fig  ma");
+
+        Assert.Equal(70, match.Score);
+        Assert.Equal(new[] { "Dart", "Flutter", "Git" }, match.RequiredAcquired);
+        Assert.Equal(new[] { "Docker", "Figma" }, match.PreferredMissing);
+    }
+
+    [Fact]
+    public void OffreSansCompetence_0_SansErreur()
+    {
+        var match = Score([], [], "Dart");
+
+        Assert.Equal(0, match.Score);
+        Assert.Equal("Aucune compétence indiquée pour cette offre.", match.Explanation);
     }
 
     // ---- Explication ----

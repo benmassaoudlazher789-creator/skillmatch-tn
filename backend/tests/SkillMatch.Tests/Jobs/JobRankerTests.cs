@@ -44,6 +44,11 @@ public sealed class JobRankerTests
     }
 
     [Fact]
+    public void AucuneOffre_AucunResultat() =>
+        // Repris du test mobile (match_score_test.dart).
+        Assert.Empty(JobRanker.Rank([], ["Dart"], 10));
+
+    [Fact]
     public void LimiteNulle_Refusee() =>
         Assert.Throws<ArgumentOutOfRangeException>(() => JobRanker.Rank([], [], 0));
 }
