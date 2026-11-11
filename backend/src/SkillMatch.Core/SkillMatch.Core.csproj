@@ -2,7 +2,7 @@
   <!--
     Domaine de SkillMatch (candidat, compétence, offre, formation, calcul du score).
     Aucun paquet ni aucune référence : le cœur métier ne dépend ni de la base
-    ni du web, ce qui le rend simple à tester. Vide pour l'instant.
+    ni du web, ce qui le rend simple à tester.
   -->
   <PropertyGroup>
     <RootNamespace>SkillMatch.Core</RootNamespace>

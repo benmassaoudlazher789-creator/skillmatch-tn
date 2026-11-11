@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SkillMatch.Core.Jobs;
 using SkillMatch.Core.Users;
 
 namespace SkillMatch.Infrastructure.Persistence;
@@ -14,6 +15,10 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
     // Propriété calculée plutôt qu'un setter auto : évite l'avertissement
     // nullable CS8618, bloquant ici à cause de TreatWarningsAsErrors.
     public DbSet<User> Users => Set<User>();
+
+    // Les compétences (job_skills) se lisent et s'écrivent toujours avec leur
+    // offre : pas de DbSet à part, pour ne pas les modifier en dehors d'elle.
+    public DbSet<Job> Jobs => Set<Job>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

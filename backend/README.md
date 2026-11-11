@@ -90,6 +90,22 @@ Les erreurs ont la forme `{ "code": "no_text", "title": "<message en français>"
 - **HTTPS :** en local, l'API tourne en `http` et le CV passe en clair sur la machine. C'est acceptable pour développer, mais un vrai déploiement devra passer en HTTPS.
 - **Tests :** les CV de test sont fabriqués pendant les tests, avec un texte fictif. Aucun vrai CV n'est rangé dans le dépôt.
 
+## Offres : `GET /offers`
+
+| Requête | Réponses |
+|---|---|
+| En-tête `Authorization: Bearer <jeton>`, `GET /offers?skill=Flutter&skill=SQL&limit=20` | `200` `{ "offers": [ … ] }` · `400` trop de compétences, compétence trop longue, `limit` invalide · `401` jeton absent ou expiré |
+
+Chaque offre renvoyée contient `id`, `title`, `company`, `type` (`stage`, `pfe` ou `emploi`), `city`, `url`, `source`, `isSample`, `publishedAt`, `score`, `requiredAcquired`, `requiredMissing`, `preferredAcquired`, `preferredMissing` et `explanation`.
+
+- **Compétences (choix validé) :** envoyées par l'application à chaque appel, 50 au plus, 40 caractères chacune. L'API ne les enregistre pas et ne les écrit dans aucun journal. Le journal d'ASP.NET qui note l'adresse des requêtes reste réglé sur `Warning` (`appsettings.json`), et un test vérifie qu'aucun message ne contient les compétences envoyées.
+- **Score :** 70 % pour les compétences requises, 30 % pour les souhaitées, arrondi vers le bas (`Core/Jobs/MatchScorer.cs`), comme dans l'application. Si l'offre n'a qu'une des deux listes, celle-ci compte pour 100 %. Le score est une aide, pas une garantie.
+- **Comparaison souple (choix validé) :** majuscules et accents ne comptent pas, et les variantes du dictionnaire se valent : « JS » correspond à « JavaScript », « k8s » à « Kubernetes » (`Core/Skills/SkillKey.cs`).
+- **Ordre :** meilleur score d'abord, puis l'offre la plus récente, puis l'Id. `limit` vaut 20 par défaut, de 1 à 50.
+- **Sources :** toute source d'offres implémente `IJobSource` (`Core/Jobs/IJobSource.cs`). `JobImporter` copie ses offres en base : une offre déjà connue (même `source` et même `external_id`) est mise à jour, et une offre invalide (lien autre que `http`/`https`, compétence en double…) est écartée sans bloquer les autres. Aucune source réelle n'est branchée pour l'instant.
+- **Offres d'exemple :** 12 offres fictives (`Infrastructure/Jobs/SampleJobSource.cs`), source `exemple`, `isSample: true`, entreprises « Société Exemple … » et liens sur `example.com` (domaine réservé aux exemples). Elles sont importées au démarrage **en développement seulement**, avec le profil `http` de `launchSettings.json` (`Jobs__ImportSampleOnStartup=true`). Relancer l'API ne crée pas de doublon. Hors développement, le service d'import n'est même pas enregistré.
+- **Limite connue :** toutes les offres sont notées en mémoire, ce qui suffit pour quelques centaines. Avec une vraie source plus volumineuse, il faudra filtrer d'abord en SQL. Une offre retirée par sa source reste aussi en base pour l'instant.
+
 ## Commandes
 
 ```
@@ -104,7 +120,7 @@ Ensuite, ouvrez `http://localhost:5080/health` : la réponse attendue est `{"sta
 
 ## Base de données et migrations
 
-Pour l'instant, une seule table : `users`.
+Trois tables : `users`, `jobs` et `job_skills`.
 
 | Colonne | Contenu |
 |---|---|
@@ -113,6 +129,31 @@ Pour l'instant, une seule table : `users`.
 | `email` | En minuscules, index unique `ix_users_email` |
 | `password_hash` | Le hash, jamais le mot de passe |
 | `created_at` | `timestamp with time zone`, en UTC |
+
+Table `jobs` (migration `AddJobs`) :
+
+| Colonne | Contenu |
+|---|---|
+| `id` | Guid v7, la clé primaire `pk_jobs` |
+| `title`, `company`, `city` | 200, 200 et 100 caractères au plus |
+| `type` | `stage`, `pfe` ou `emploi` (texte) |
+| `url` | Lien `http` ou `https`, facultatif |
+| `source`, `external_id` | La source et l'identifiant chez elle, index unique `ix_jobs_source_external_id` |
+| `is_sample` | Vrai pour une offre d'exemple |
+| `published_at`, `imported_at` | `timestamp with time zone`, en UTC |
+
+Table `job_skills` : `job_id` et `name` (clé primaire `pk_job_skills`, donc une compétence par offre au plus une fois), `importance` (`required` ou `preferred`). Supprimée avec son offre (cascade).
+
+### Ajouter la migration des offres
+
+```
+dotnet build
+dotnet ef migrations add AddJobs --project src/SkillMatch.Infrastructure --startup-project src/SkillMatch.Api --output-dir Persistence/Migrations
+dotnet ef migrations script InitialCreate AddJobs --project src/SkillMatch.Infrastructure --startup-project src/SkillMatch.Api
+dotnet ef database update --project src/SkillMatch.Infrastructure --startup-project src/SkillMatch.Api
+```
+
+Ensuite, `dotnet run --project src/SkillMatch.Api` importe les offres d'exemple au démarrage. Le journal affiche « Offres d'exemple importées : … ».
 
 ### Avant la première migration
 
@@ -141,4 +182,4 @@ dotnet ef database update --project src/SkillMatch.Infrastructure --startup-proj
 
 - **`/health/db` :** une sonde qui contrôle aussi la base, avec `AddDbContextCheck`.
 - **Émulateur Android :** il joint l'API via `http://10.0.2.2:5080`, et non `localhost`.
-- **CORS (développement seulement) :** l'application lancée dans Chrome (`http://localhost:<port>`) peut appeler l'API avec `POST`, `Content-Type` et `Authorization` (voir `Api/Cors/DevCors.cs`).
+- **CORS (développement seulement) :** l'application lancée dans Chrome (`http://localhost:<port>`) peut appeler l'API avec `GET`, `POST`, `Content-Type` et `Authorization` (voir `Api/Cors/DevCors.cs`).

@@ -1,6 +1,7 @@
 using SkillMatch.Api.Auth;
 using SkillMatch.Api.Cors;
 using SkillMatch.Api.Cv;
+using SkillMatch.Api.Offers;
 using SkillMatch.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,10 @@ builder.Services.AddApiAuth();
 
 // Analyse des CV : limite d'analyses par compte (voir Cv/CvSetup.cs).
 builder.Services.AddCvAnalysis();
+
+// Offres : import des exemples au démarrage, en développement seulement
+// (voir Offers/OffersSetup.cs).
+builder.Services.AddOffers(builder.Environment);
 
 // Autorise l'application Flutter lancée dans Chrome (voir Cors/DevCors.cs).
 builder.Services.AddDevCors();
@@ -44,5 +49,6 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapAuthEndpoints();
 app.MapCvEndpoints();
+app.MapOffersEndpoints();
 
 app.Run();

@@ -6,6 +6,7 @@ using SkillMatch.Core.Cv;
 using SkillMatch.Core.Users;
 using SkillMatch.Infrastructure.Auth;
 using SkillMatch.Infrastructure.Cv;
+using SkillMatch.Infrastructure.Jobs;
 using SkillMatch.Infrastructure.Persistence;
 
 namespace SkillMatch.Infrastructure;
@@ -59,6 +60,13 @@ public static class DependencyInjection
         // entre deux appels (et aucun CV n'est conservé, voir CvAnalyzer).
         services.AddSingleton<ICvTextExtractor, CvTextExtractor>();
         services.AddSingleton<CvAnalyzer>();
+
+        // Offres. Scoped, comme le DbContext qu'ils utilisent.
+        services.AddScoped<JobCatalog>();
+        services.AddScoped<JobImporter>();
+        // Enregistrée sous son propre type, PAS comme IJobSource : seul
+        // l'import de démarrage en développement la demande (voir SampleJobSource).
+        services.AddSingleton<SampleJobSource>();
 
         return services;
     }

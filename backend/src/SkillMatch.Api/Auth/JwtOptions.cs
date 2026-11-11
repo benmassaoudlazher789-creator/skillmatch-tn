@@ -8,6 +8,7 @@ namespace SkillMatch.Api.Auth;
 /// </summary>
 public sealed class JwtOptions
 {
+
     public const string SectionName = "Jwt";
 
     /// <summary>

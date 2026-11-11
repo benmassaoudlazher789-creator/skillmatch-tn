@@ -44,6 +44,11 @@ public sealed class SkillMatchApiFactory : WebApplicationFactory<Program>
                 // au lieu d'environ 250 ms avec le facteur 12 de production.
                 ["PasswordHashing:WorkFactor"] = "4",
                 ["RateLimiting:Auth:PermitLimit"] = TestAuthPermitLimit,
+                // Pas d'import des offres d'exemple au démarrage, même pour les
+                // copies de l'API en « Development » (tests CORS) : l'API démarre
+                // AVANT que CreateHost crée les tables. Les tests des offres
+                // importent eux-mêmes ce dont ils ont besoin.
+                ["Jobs:ImportSampleOnStartup"] = "false",
             });
         });
 
