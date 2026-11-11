@@ -12,6 +12,7 @@ import '../../auth/presentation/widgets/labeled_text_field.dart';
 import '../../cv/data/cv_analysis_service.dart';
 import '../../cv/data/cv_picker.dart';
 import '../../cv/domain/cv_failure.dart';
+import '../../offers/data/offers_service.dart';
 import '../../offers/presentation/offers_screen.dart';
 import '../domain/skill_rules.dart';
 
@@ -29,13 +30,22 @@ enum _Status { loading, failed, ready }
 /// Les compétences retenues sont celles que le candidat garde : la
 /// détection automatique n'est qu'un point de départ.
 class SkillsReviewScreen extends StatefulWidget {
-  const SkillsReviewScreen({super.key, required this.file, this.service});
+  const SkillsReviewScreen({
+    super.key,
+    required this.file,
+    this.service,
+    this.offersService,
+  });
 
   /// Fichier choisi sur l'écran Ajout du CV.
   final PickedCvFile file;
 
   /// Analyse du CV. Les tests en donnent une fausse ; sinon, la vraie.
   final CvAnalysisService? service;
+
+  /// Transmis à l'écran Offres. Les tests en donnent un faux ; sinon, le
+  /// vrai (defaultOffersService).
+  final OffersService? offersService;
 
   // Clés qui permettent aux tests de retrouver le champ et les boutons.
   static const skillFieldKey = Key('skills_field');
@@ -156,7 +166,10 @@ class _SkillsReviewScreenState extends State<SkillsReviewScreen> {
     // intacte.
     Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => OffersScreen(skills: List.unmodifiable(_skills)),
+        builder: (_) => OffersScreen(
+          skills: List.unmodifiable(_skills),
+          service: widget.offersService,
+        ),
       ),
     );
   }

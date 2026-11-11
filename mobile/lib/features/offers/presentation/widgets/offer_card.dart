@@ -3,22 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/widgets/skill_chip.dart';
-import '../../domain/match_score.dart';
 import '../../domain/offer.dart';
 
 /// Carte d'une offre : en-tête, score et son explication, puis les
 /// compétences présentes (vert) et manquantes (rouge).
 ///
-/// Widget sans état (StatelessWidget) : il affiche un [MatchResult] déjà
-/// calculé et prévient l'écran quand on touche une compétence manquante.
+/// Widget sans état (StatelessWidget) : il affiche une [Offer] dont le score
+/// a été calculé par le serveur, et prévient l'écran quand on touche une
+/// compétence manquante.
 class OfferCard extends StatelessWidget {
-  const OfferCard({
-    super.key,
-    required this.result,
-    required this.onMissingTap,
-  });
+  const OfferCard({super.key, required this.offer, required this.onMissingTap});
 
-  final MatchResult result;
+  final Offer offer;
 
   /// Appelée avec le nom de la compétence manquante touchée.
   final ValueChanged<String> onMissingTap;
@@ -28,7 +24,6 @@ class OfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final offer = result.offer;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.gutter),
@@ -47,7 +42,7 @@ class OfferCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(text, offer),
+          _buildHeader(text),
           const SizedBox(height: AppSpacing.md),
           // Le score a sa propre ligne, et non une place à droite du titre
           // comme dans la maquette : dans une Row, sa largeur (qui grandit
@@ -60,7 +55,7 @@ class OfferCard extends StatelessWidget {
           // l'a déjà entendu dans la boîte du score, d'où ExcludeSemantics.
           ExcludeSemantics(
             child: LinearProgressIndicator(
-              value: result.percent / 100,
+              value: offer.score / 100,
               minHeight: 6,
               borderRadius: BorderRadius.circular(3),
               color: AppColors.emerald,
@@ -69,7 +64,7 @@ class OfferCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            result.explanation,
+            offer.explanation,
             style: text.bodySmall?.copyWith(color: AppColors.carbon),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -79,7 +74,7 @@ class OfferCard extends StatelessWidget {
             color: AppColors.emerald,
             emptyText: 'aucune pour le moment',
             chips: [
-              for (final skill in result.acquired) SkillChip.acquired(skill),
+              for (final skill in offer.acquired) SkillChip.acquired(skill),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -89,7 +84,7 @@ class OfferCard extends StatelessWidget {
             color: AppColors.skillMissingText,
             emptyText: 'aucune compétence manquante',
             chips: [
-              for (final skill in result.missing)
+              for (final skill in offer.missing)
                 SkillChip.missing(skill, onTap: () => onMissingTap(skill)),
             ],
           ),
@@ -100,7 +95,7 @@ class OfferCard extends StatelessWidget {
 
   /// Icône du type, puis titre et infos. Seule l'icône a une largeur fixe
   /// (44 + 12 px) : tout le reste est dans l'Expanded et passe à la ligne.
-  Widget _buildHeader(TextTheme text, Offer offer) {
+  Widget _buildHeader(TextTheme text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -131,8 +126,12 @@ class OfferCard extends StatelessWidget {
                 '${offer.company} · ${offer.city} · ${offer.type.label}',
                 style: text.bodySmall?.copyWith(color: AppColors.carbon),
               ),
-              const SizedBox(height: AppSpacing.xs),
-              _buildSampleBadge(text),
+              // Badge seulement pour une offre fictive (isSample envoyé par
+              // le serveur) : une vraie offre n'en porte pas.
+              if (offer.isSample) ...[
+                const SizedBox(height: AppSpacing.xs),
+                _buildSampleBadge(text),
+              ],
             ],
           ),
         ),
@@ -140,7 +139,7 @@ class OfferCard extends StatelessWidget {
     );
   }
 
-  /// Badge ambre, même couleurs que le bandeau d'exemple de l'écran 5.
+  /// Badge ambre, mêmes couleurs que le bandeau d'exemple.
   Widget _buildSampleBadge(TextTheme text) {
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -162,7 +161,7 @@ class OfferCard extends StatelessWidget {
   /// (« Correspondance : 78 % ») plutôt que « 78 % score ».
   Widget _buildScore(TextTheme text) {
     return Semantics(
-      label: 'Correspondance : ${result.percent} %',
+      label: 'Correspondance : ${offer.score} %',
       excludeSemantics: true,
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -180,7 +179,7 @@ class OfferCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${result.percent} %',
+              '${offer.score} %',
               style: text.headlineSmall?.copyWith(color: AppColors.emerald),
             ),
             Text(

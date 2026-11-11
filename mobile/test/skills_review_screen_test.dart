@@ -11,12 +11,14 @@ import 'package:skillmatch_tn/features/skills/domain/skill_rules.dart';
 import 'package:skillmatch_tn/features/skills/presentation/skills_review_screen.dart';
 
 import 'support/fake_cv.dart';
+import 'support/fake_offers.dart';
 
 void main() {
   // Liste fictive, propre aux tests.
   const skills = ['Dart', 'Flutter', 'SQL', 'Git'];
 
   late FakeCvApi api;
+  late FakeOffersApi offersApi;
 
   // Même principe que les autres tests : MaterialApp sans AppTheme, car
   // google_fonts n'a pas Internet pendant les tests.
@@ -35,6 +37,18 @@ void main() {
     addTearDown(tester.view.reset);
     final fake = fakeCvService();
     api = fake.api..onAnalyze = onAnalyze ?? () async => initial;
+    // Faux service d'offres, transmis à l'écran Offres : aucun réseau. Il
+    // renvoie une offre où Flutter est acquis, comme le ferait le serveur.
+    final offersFake = fakeOffersService();
+    offersApi = offersFake.api
+      ..onFetch = () async => [
+        fakeOffer(
+          id: 'mobile',
+          score: 70,
+          requiredAcquired: ['Flutter', 'Dart'],
+          preferredMissing: ['Git'],
+        ),
+      ];
     await tester.pumpWidget(
       MaterialApp(
         // Permet de simuler un texte agrandi dans les réglages du téléphone.
@@ -43,7 +57,11 @@ void main() {
               .copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
-        home: SkillsReviewScreen(file: fakeCvFile, service: fake.service),
+        home: SkillsReviewScreen(
+          file: fakeCvFile,
+          service: fake.service,
+          offersService: offersFake.service,
+        ),
       ),
     );
     // pumpAndSettle attend la réponse (immédiate) du faux serveur. Pas
@@ -346,8 +364,10 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text(OffersScreen.heading), findsOneWidget);
-        // Flutter, ajouté juste avant, apparaît en vert sur les offres
-        // d'exemple qui le demandent, et jamais en rouge.
+        // Les compétences COURANTES sont envoyées au serveur, Flutter
+        // (ajouté à la main) compris.
+        expect(offersApi.calls.single.skills, ['Dart', 'Flutter']);
+        // Flutter apparaît en vert sur l'offre renvoyée, et jamais en rouge.
         bool isFlutter(Widget w, SkillChipKind kind) =>
             w is SkillChip && w.label == 'Flutter' && w.kind == kind;
         expect(

@@ -3,7 +3,7 @@ import 'training.dart';
 
 /// Recherche des formations d'une compétence.
 ///
-/// Du Dart pur, sans Flutter (comme MatchScore) : testable sans écran.
+/// Du Dart pur, sans Flutter (comme SkillRules) : testable sans écran.
 abstract final class TrainingFinder {
   /// Formations de [catalog] qui correspondent à [skill], de la plus
   /// accessible à la plus avancée.
