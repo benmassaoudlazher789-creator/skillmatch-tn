@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SkillMatch.Core.Jobs;
+using SkillMatch.Core.Trainings;
 using SkillMatch.Core.Users;
 
 namespace SkillMatch.Infrastructure.Persistence;
@@ -19,6 +20,8 @@ public sealed class SkillMatchDbContext(DbContextOptions<SkillMatchDbContext> op
     // Les compétences (job_skills) se lisent et s'écrivent toujours avec leur
     // offre : pas de DbSet à part, pour ne pas les modifier en dehors d'elle.
     public DbSet<Job> Jobs => Set<Job>();
+
+    public DbSet<Training> Trainings => Set<Training>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

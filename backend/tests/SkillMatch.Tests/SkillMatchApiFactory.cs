@@ -49,6 +49,8 @@ public sealed class SkillMatchApiFactory : WebApplicationFactory<Program>
                 // AVANT que CreateHost crée les tables. Les tests des offres
                 // importent eux-mêmes ce dont ils ont besoin.
                 ["Jobs:ImportSampleOnStartup"] = "false",
+                // Même raison pour les formations d'exemple.
+                ["Trainings:ImportSampleOnStartup"] = "false",
             });
         });
 

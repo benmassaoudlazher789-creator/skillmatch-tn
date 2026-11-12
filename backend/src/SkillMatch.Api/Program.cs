@@ -2,6 +2,7 @@ using SkillMatch.Api.Auth;
 using SkillMatch.Api.Cors;
 using SkillMatch.Api.Cv;
 using SkillMatch.Api.Offers;
+using SkillMatch.Api.Trainings;
 using SkillMatch.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +23,9 @@ builder.Services.AddCvAnalysis();
 // Offres : import des exemples au démarrage, en développement seulement
 // (voir Offers/OffersSetup.cs).
 builder.Services.AddOffers(builder.Environment);
+
+// Formations : même principe que les offres (voir Trainings/TrainingsSetup.cs).
+builder.Services.AddTrainings(builder.Environment);
 
 // Autorise l'application Flutter lancée dans Chrome (voir Cors/DevCors.cs).
 builder.Services.AddDevCors();
@@ -50,5 +54,6 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 app.MapAuthEndpoints();
 app.MapCvEndpoints();
 app.MapOffersEndpoints();
+app.MapTrainingsEndpoints();
 
 app.Run();

@@ -106,6 +106,22 @@ Chaque offre renvoyée contient `id`, `title`, `company`, `type` (`stage`, `pfe`
 - **Offres d'exemple :** 12 offres fictives (`Infrastructure/Jobs/SampleJobSource.cs`), source `exemple`, `isSample: true`, entreprises « Société Exemple … » et liens sur `example.com` (domaine réservé aux exemples). Elles sont importées au démarrage **en développement seulement**, avec le profil `http` de `launchSettings.json` (`Jobs__ImportSampleOnStartup=true`). Relancer l'API ne crée pas de doublon. Hors développement, le service d'import n'est même pas enregistré.
 - **Limite connue :** toutes les offres sont notées en mémoire, ce qui suffit pour quelques centaines. Avec une vraie source plus volumineuse, il faudra filtrer d'abord en SQL. Une offre retirée par sa source reste aussi en base pour l'instant.
 
+## Formations : `GET /trainings`
+
+| Requête | Réponses |
+|---|---|
+| En-tête `Authorization: Bearer <jeton>`, `GET /trainings?skill=Docker` | `200` `{ "skill": "Docker", "trainings": [ … ] }` · `400` `missing_skill`, `too_many_skills`, `skill_too_long` · `401` jeton absent ou expiré |
+
+Chaque formation renvoyée contient `id`, `skill`, `title`, `level` (`debutant`, `intermediaire` ou `avance`), `hours`, `type` (`cours_en_ligne`, `tutoriel` ou `projet_pratique`), `url`, `source` et `isSample`.
+
+- **Une compétence par appel (choix validé) :** l'écran Formations s'ouvre pour une compétence manquante précise. 40 caractères au plus. Comme pour `/offers`, elle n'est ni enregistrée ni écrite dans un journal (un test le vérifie).
+- **Comparaison souple :** la compétence est normalisée comme le dictionnaire (`Core/Skills/SkillKey.cs`). « docker », « JS » ou « k8s » trouvent Docker, JavaScript et Kubernetes. La clé est calculée une fois à l'import et enregistrée dans `skill_key` (colonne indexée) : la recherche est une simple égalité SQL.
+- **Aucune formation :** réponse `200` avec une liste vide, ce n'est pas une erreur.
+- **Ordre :** niveau (débutant d'abord), puis durée (la plus courte d'abord), puis titre, comme dans l'application. Le tri se fait en C#, car l'ordre alphabétique des codes de niveau n'est pas l'ordre des niveaux.
+- **Sources :** toute source de formations implémente `ITrainingSource` (`Core/Trainings/ITrainingSource.cs`). `TrainingImporter` fonctionne comme `JobImporter` (mise à jour sans doublon, formation invalide écartée). Aucune source réelle n'est branchée.
+- **Formations d'exemple :** 16 formations fictives (`Infrastructure/Trainings/SampleTrainingSource.cs`), source `exemple`, `isSample: true`, **sans lien** (choix validé : pas de bouton « ouvrir » pour une formation inventée). Windows, Linux et Réseaux n'en ont volontairement aucune, pour voir l'état vide. Elles sont importées au démarrage **en développement seulement** (`Trainings__ImportSampleOnStartup=true` dans le profil `http`).
+- **Limite connue :** une formation retirée par sa source reste en base pour l'instant.
+
 ## Commandes
 
 ```
@@ -120,7 +136,7 @@ Ensuite, ouvrez `http://localhost:5080/health` : la réponse attendue est `{"sta
 
 ## Base de données et migrations
 
-Trois tables : `users`, `jobs` et `job_skills`.
+Quatre tables : `users`, `jobs`, `job_skills` et `trainings`.
 
 | Colonne | Contenu |
 |---|---|
@@ -154,6 +170,32 @@ dotnet ef database update --project src/SkillMatch.Infrastructure --startup-proj
 ```
 
 Ensuite, `dotnet run --project src/SkillMatch.Api` importe les offres d'exemple au démarrage. Le journal affiche « Offres d'exemple importées : … ».
+
+Table `trainings` (migration `AddTrainings`) :
+
+| Colonne | Contenu |
+|---|---|
+| `id` | Guid v7, la clé primaire `pk_trainings` |
+| `skill` | La compétence telle que la source l'écrit, 40 caractères au plus |
+| `skill_key` | Sa clé de comparaison (`SkillKey`), index `ix_trainings_skill_key` |
+| `title` | 200 caractères au plus |
+| `level`, `type` | Codes texte (`debutant`…, `cours_en_ligne`…) |
+| `hours` | Durée indicative, de 1 à 500 heures |
+| `url` | Lien `http` ou `https`, facultatif (vide pour les exemples) |
+| `source`, `external_id` | Index unique `ix_trainings_source_external_id` |
+| `is_sample` | Vrai pour une formation d'exemple |
+| `imported_at` | `timestamp with time zone`, en UTC |
+
+### Ajouter la migration des formations
+
+```
+dotnet build
+dotnet ef migrations add AddTrainings --project src/SkillMatch.Infrastructure --startup-project src/SkillMatch.Api --output-dir Persistence/Migrations
+dotnet ef migrations script AddJobs AddTrainings --project src/SkillMatch.Infrastructure --startup-project src/SkillMatch.Api
+dotnet ef database update --project src/SkillMatch.Infrastructure --startup-project src/SkillMatch.Api
+```
+
+Ensuite, au démarrage, le journal affiche aussi « Formations d'exemple importées : … ».
 
 ### Avant la première migration
 

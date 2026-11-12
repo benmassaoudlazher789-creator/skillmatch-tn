@@ -114,6 +114,84 @@ namespace SkillMatch.Infrastructure.Persistence.Migrations
                     b.ToTable("job_skills", (string)null);
                 });
 
+            modelBuilder.Entity("SkillMatch.Core.Trainings.Training", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("external_id");
+
+                    b.Property<int>("Hours")
+                        .HasColumnType("integer")
+                        .HasColumnName("hours");
+
+                    b.Property<DateTimeOffset>("ImportedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("imported_at");
+
+                    b.Property<bool>("IsSample")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_sample");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("level");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("skill");
+
+                    b.Property<string>("SkillKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("skill_key");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("type");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("url");
+
+                    b.HasKey("Id")
+                        .HasName("pk_trainings");
+
+                    b.HasIndex("SkillKey")
+                        .HasDatabaseName("ix_trainings_skill_key");
+
+                    b.HasIndex("Source", "ExternalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_trainings_source_external_id");
+
+                    b.ToTable("trainings", (string)null);
+                });
+
             modelBuilder.Entity("SkillMatch.Core.Users.User", b =>
                 {
                     b.Property<Guid>("Id")

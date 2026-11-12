@@ -8,6 +8,7 @@ using SkillMatch.Infrastructure.Auth;
 using SkillMatch.Infrastructure.Cv;
 using SkillMatch.Infrastructure.Jobs;
 using SkillMatch.Infrastructure.Persistence;
+using SkillMatch.Infrastructure.Trainings;
 
 namespace SkillMatch.Infrastructure;
 
@@ -67,6 +68,12 @@ public static class DependencyInjection
         // Enregistrée sous son propre type, PAS comme IJobSource : seul
         // l'import de démarrage en développement la demande (voir SampleJobSource).
         services.AddSingleton<SampleJobSource>();
+
+        // Formations : même organisation que les offres.
+        services.AddScoped<TrainingCatalog>();
+        services.AddScoped<TrainingImporter>();
+        // Enregistrée sous son propre type, PAS comme ITrainingSource (voir SampleTrainingSource).
+        services.AddSingleton<SampleTrainingSource>();
 
         return services;
     }
