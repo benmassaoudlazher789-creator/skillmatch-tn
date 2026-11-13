@@ -8,6 +8,7 @@ import '../../auth/presentation/auth_navigation.dart';
 // Son nom ne convient plus (« auth ») : à renommer et déplacer dans core/
 // lors d'un prochain nettoyage.
 import '../../auth/presentation/widgets/auth_scaffold.dart';
+import '../../trainings/data/trainings_service.dart';
 import '../../trainings/presentation/trainings_screen.dart';
 import '../data/offers_service.dart';
 import '../domain/offer.dart';
@@ -25,13 +26,22 @@ enum _Status { loading, failed, ready }
 /// Les filtres (Emplois, Stages, PFE) ne font que masquer des cartes de
 /// cette liste, sans rien recalculer.
 class OffersScreen extends StatefulWidget {
-  const OffersScreen({super.key, required this.skills, this.service});
+  const OffersScreen({
+    super.key,
+    required this.skills,
+    this.service,
+    this.trainingsService,
+  });
 
   /// Compétences déclarées par le candidat à l'écran précédent.
   final List<String> skills;
 
   /// Chargement des offres. Les tests en donnent un faux ; sinon, le vrai.
   final OffersService? service;
+
+  /// Transmis à l'écran Formations : les tests y passent un faux, pour
+  /// qu'ouvrir une formation n'appelle jamais le réseau. Null = le vrai.
+  final TrainingsService? trainingsService;
 
   static const heading = 'Offres pour votre CV';
   static const loadingText = 'Chargement des offres…';
@@ -130,7 +140,10 @@ class _OffersScreenState extends State<OffersScreen> {
   /// filtre (l'état de cet écran n'est pas détruit).
   void _openTrainings(String skill) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => TrainingsScreen(skill: skill)),
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            TrainingsScreen(skill: skill, service: widget.trainingsService),
+      ),
     );
   }
 

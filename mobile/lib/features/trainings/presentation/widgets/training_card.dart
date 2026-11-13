@@ -4,9 +4,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/training.dart';
 
-/// Carte d'une formation : badge d'exemple, titre, puis durée, niveau et
-/// type. Pas de bouton « Voir la formation » : il n'y a pas encore de vraie
-/// formation à ouvrir, et aucun appel réseau tant que l'API n'existe pas.
+/// Carte d'une formation : badge d'exemple (si c'en est une), titre, puis
+/// durée, niveau et type.
+///
+/// Aucun bouton de lien, même si training.url est rempli (choix validé) :
+/// ouvrir un lien demanderait la dépendance url_launcher, que l'écran
+/// Offres n'utilise pas non plus. À ajouter avec une vraie source.
 class TrainingCard extends StatelessWidget {
   const TrainingCard({super.key, required this.training});
 
@@ -35,8 +38,11 @@ class TrainingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSampleBadge(text),
-          const SizedBox(height: AppSpacing.sm),
+          // Badge seulement pour une formation inventée.
+          if (training.isSample) ...[
+            _buildSampleBadge(text),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           Text(
             training.title,
             style: text.titleMedium?.copyWith(color: AppColors.navy),

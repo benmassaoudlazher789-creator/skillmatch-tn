@@ -13,6 +13,7 @@ import 'package:skillmatch_tn/features/trainings/presentation/trainings_screen.d
 import 'package:skillmatch_tn/features/trainings/presentation/widgets/training_card.dart';
 
 import 'support/fake_offers.dart';
+import 'support/fake_trainings.dart';
 
 void main() {
   // Compétences et offres fictives, propres aux tests. Les scores et les
@@ -60,6 +61,10 @@ void main() {
 
   late FakeOffersApi api;
 
+  /// Faux serveur des formations, transmis à l'écran Formations ouvert
+  /// depuis une puce rouge : aucun appel réseau réel.
+  late FakeTrainingsApi trainingsApi;
+
   // Même principe que les autres tests : MaterialApp sans AppTheme, car
   // google_fonts n'a pas Internet pendant les tests.
   // [onFetch] remplace la réponse du serveur : aucun appel réseau réel.
@@ -77,6 +82,11 @@ void main() {
     final fake = fakeOffersService();
     final answer = list ?? offers;
     api = fake.api..onFetch = onFetch ?? () async => answer;
+    final trainings = fakeTrainingsService();
+    trainingsApi = trainings.api
+      ..onFetch = () async => [
+        fakeTraining(id: 'docker-test', skill: 'Docker', isSample: true),
+      ];
     await tester.pumpWidget(
       MaterialApp(
         builder: (context, child) => MediaQuery(
@@ -84,7 +94,11 @@ void main() {
               .copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
-        home: OffersScreen(skills: skills, service: fake.service),
+        home: OffersScreen(
+          skills: skills,
+          service: fake.service,
+          trainingsService: trainings.service,
+        ),
       ),
     );
     // Pas de pumpAndSettle pendant le chargement : l'indicateur tourne
@@ -320,9 +334,11 @@ void main() {
       // pumpAndSettle attend la fin de l'animation de transition.
       await tester.pumpAndSettle();
 
-      // Les formations d'exemple de Docker s'affichent.
+      // L'écran Formations demande au (faux) serveur les formations de
+      // Docker, et les affiche.
       expect(find.text(TrainingsScreen.heading('Docker')), findsOneWidget);
-      expect(find.byType(TrainingCard), findsWidgets);
+      expect(trainingsApi.calls.single.skill, 'Docker');
+      expect(find.byType(TrainingCard), findsOneWidget);
       expect(find.text(OffersScreen.heading), findsNothing);
 
       // « Retour » revient aux offres, avec le même filtre et sans
