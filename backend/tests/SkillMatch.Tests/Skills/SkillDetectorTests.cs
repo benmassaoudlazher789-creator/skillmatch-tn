@@ -34,7 +34,8 @@ public sealed class SkillDetectorTests
     [InlineData("ASP.NET Core", ".NET")]
     [InlineData("dotnet", ".NET")]
     [InlineData("scikit-learn", "Scikit-learn")]
-    [InlineData("GitHub", "Git")]
+    [InlineData("GitLab", "Git")]
+    [InlineData("GitHub", "GitHub")]
     [InlineData("REST API", "API REST")]
     [InlineData("Tests unitaires", "Tests unitaires")]
     public void VariantesReconnues(string text, string expected) =>

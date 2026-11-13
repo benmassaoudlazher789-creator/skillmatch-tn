@@ -29,12 +29,13 @@ public static class SkillDictionary
     [
         // ---- Langages ----
         new("Dart", ["dart"]),
-        new("Python", ["python"]),
+        // « python3 » est un seul mot ; « Python 3 » est déjà trouvé par « python ».
+        new("Python", ["python", "python3"]),
         new("Java", ["java"]),
         new("JavaScript", ["javascript", "js", "ecmascript"]),
         new("TypeScript", ["typescript"]),
         new("PHP", ["php"]),
-        new("C#", ["c#", "csharp"]),
+        new("C#", ["c#", "csharp", "c sharp"]),
         new("C++", ["c++", "cpp"]),
         // « C » seul : une lettre, trop ambiguë (initiale, note, « C1 »…).
         new("C", ["langage c", "language c", "programmation c"]),
@@ -55,8 +56,20 @@ public static class SkillDictionary
         new("Angular", ["angular", "angularjs"]),
         // « Vue » est un mot français : forme exigée.
         new("Vue.js", ["vue.js", "vuejs"]),
-        new("Node.js", ["node.js", "nodejs"]),
-        new(".NET", [".net", "dotnet", "asp.net", "asp.net core"]),
+        // « node » seul n'est pas retenu : c'est aussi un nœud de graphe.
+        // « node js » (deux mots) contient « js » : JavaScript est aussi trouvé,
+        // ce qui est cohérent.
+        new("Node.js", ["node.js", "nodejs", "node js"]),
+        // « Express » est un mot courant (« livraison express ») : on exige
+        // « express.js », ou « Express » juste après Node.js, comme dans la
+        // liste « Node.js, Express, MongoDB » (la virgule sépare les mots,
+        // donc « node.js » et « express » se suivent).
+        new("Express", ["express.js", "expressjs", "express js", "node.js express", "nodejs express"]),
+        // « Next » seul est un mot anglais courant (« next step ») : forme exigée.
+        new("Next.js", ["next.js", "nextjs", "next js"]),
+        // « net » seul (« salaire net ») n'est pas une variante : le point de
+        // « .net » est gardé par le découpage en mots.
+        new(".NET", [".net", "dotnet", "dot net", "asp.net", "asp.net core"]),
         new("Spring Boot", ["spring boot", "spring framework"]),
         new("Django", ["django"]),
         new("Flask", ["flask"]),
@@ -71,29 +84,55 @@ public static class SkillDictionary
         new("PyTorch", ["pytorch"]),
 
         // ---- Données ----
-        new("PostgreSQL", ["postgresql", "postgres"]),
+        // « Postgre » : faute de frappe fréquente dans les CV.
+        new("PostgreSQL", ["postgresql", "postgres", "postgre", "psql"]),
         new("MySQL", ["mysql"]),
-        new("MongoDB", ["mongodb"]),
+        new("MongoDB", ["mongodb", "mongo", "mongo db"]),
         new("Redis", ["redis"]),
         new("Firebase", ["firebase"]),
         new("Power BI", ["power bi", "powerbi"]),
         // « Tableau » est un mot français : forme exigée.
         new("Tableau", ["tableau software", "tableau desktop"]),
         new("Machine learning", ["machine learning", "apprentissage automatique"]),
+        // « réseaux de neurones » ne déclenche pas « Réseaux » : cette entrée
+        // exige « réseaux informatiques » ou une autre forme précise.
+        new("Deep Learning", ["deep learning", "apprentissage profond", "reseaux de neurones", "reseau de neurones", "neural networks"]),
         new("Apache Spark", ["apache spark", "pyspark"]),
 
         // ---- Outils, cloud, méthodes ----
-        new("Git", ["git", "github", "gitlab"]),
-        new("Docker", ["docker"]),
-        new("Kubernetes", ["kubernetes", "k8s"]),
+        // GitHub est une entrée à part (choix validé) : un CV qui ne cite que
+        // GitHub n'a donc pas « Git » pour les offres qui demandent Git.
+        new("Git", ["git", "gitlab"]),
+        new("GitHub", ["github"]),
+        new("Docker", ["docker", "dockerfile"]),
+        new("Kubernetes", ["kubernetes", "k8s", "kubectl"]),
         new("Jenkins", ["jenkins"]),
-        new("CI/CD", ["ci/cd", "integration continue"]),
+        // « CI CD » et « CI-CD » donnent les mêmes mots que « ci/cd » (la barre
+        // et le tiret séparent) : une seule variante suffit. « CD » seul (le
+        // disque) n'est pas une variante.
+        new("CI/CD", ["ci/cd", "cicd", "integration continue", "deploiement continu", "continuous integration", "continuous deployment", "continuous delivery"]),
+        // « Actions » seul est un mot courant : on exige « GitHub Actions ».
+        // GitHub est alors trouvé aussi, comme React avec React Native.
+        new("GitHub Actions", ["github actions", "github action"]),
+        new("Prometheus", ["prometheus"]),
+        new("Grafana", ["grafana"]),
+        // « Sonar » seul désigne aussi un appareil : forme exigée.
+        new("SonarQube", ["sonarqube", "sonar qube"]),
+        new("Trivy", ["trivy"]),
+        new("Snyk", ["snyk"]),
+        new("Netlify", ["netlify"]),
+        // « Render » est un mot courant (« render », rendu d'une page) : on
+        // exige l'adresse de l'hébergeur (choix validé).
+        new("Render", ["render.com"]),
         new("AWS", ["aws", "amazon web services"]),
         new("Azure", ["azure", "microsoft azure"]),
         new("Google Cloud", ["google cloud", "gcp"]),
-        new("API REST", ["api rest", "rest api", "api restful", "restful"]),
+        // « Rest » seul (« the rest », « le reste ») n'est pas une variante.
+        new("API REST", ["api rest", "rest api", "api restful", "restful", "rest apis", "apis rest", "services rest"]),
+        new("JWT", ["jwt", "json web token", "json web tokens"]),
         new("GraphQL", ["graphql"]),
         new("Postman", ["postman"]),
+        new("Stripe", ["stripe"]),
         new("Tests unitaires", ["tests unitaires", "test unitaire", "unit test", "unit tests", "unit testing"]),
         new("Selenium", ["selenium"]),
         new("Jira", ["jira"]),
@@ -102,11 +141,23 @@ public static class SkillDictionary
         new("UML", ["uml"]),
 
         // ---- Systèmes et réseaux ----
-        new("Linux", ["linux", "ubuntu"]),
+        // Une distribution citée seule montre aussi la pratique de Linux.
+        new("Linux", ["linux", "ubuntu", "debian", "centos", "red hat", "rhel", "fedora"]),
         new("Windows", ["windows", "windows server"]),
         // « Réseau » seul est trop large (« réseaux sociaux ») : formes exigées.
         new("Réseaux", ["reseaux informatiques", "reseau informatique", "administration reseau", "administration reseaux", "tcp/ip", "networking"]),
+        new("CCNA", ["ccna"]),
+        // « Packet Tracer » est le simulateur de réseau de Cisco.
+        new("Cisco", ["cisco", "packet tracer"]),
         new("Android", ["android"]),
+
+        // ---- Embarqué ----
+        // « ESP » seul (abréviation d'« espagnol ») n'est pas une variante.
+        new("ESP32", ["esp32", "esp 32"]),
+        // Les noms de cartes collent souvent la famille au nom (« STM32F4 ») :
+        // le découpage en mots entiers oblige à lister les plus courantes.
+        new("STM32", ["stm32", "stm 32", "stm32cubeide", "stm32cubemx", "stm32f1", "stm32f4", "stm32l4"]),
+        new("Arduino", ["arduino"]),
 
         // ---- Bureautique et design ----
         new("Excel", ["excel", "ms excel", "microsoft excel"]),
